@@ -1,4 +1,5 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import Logo from './Logo'
 
 const nav = [
@@ -9,9 +10,17 @@ const nav = [
 ]
 
 export default function Header() {
+  const [open, setOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    // Close menu on route change
+    setOpen(false)
+  }, [location.pathname])
+
   return (
     <header className="sticky top-0 z-50 bg-black/70 backdrop-blur border-b border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-6">
+      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-6 relative">
         <Link to="/" className="group">
           <Logo className="[&>div>span:last-child]:group-hover:w-4/5" />
         </Link>
@@ -40,9 +49,48 @@ export default function Header() {
             Get a Quote
           </Link>
         </nav>
-        <div className="md:hidden ml-auto flex items-center gap-3">
+        <div className="md:hidden ml-auto flex items-center gap-2">
           <Link to="/call" aria-label="Call Now" className="px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold">Call</Link>
+          <button
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((v) => !v)}
+            className="px-3 py-2 rounded-md border border-white/10 text-white/80 hover:text-white"
+          >
+            <span className="block w-5 h-[2px] bg-white mb-1" />
+            <span className="block w-5 h-[2px] bg-white mb-1" />
+            <span className="block w-5 h-[2px] bg-white" />
+          </button>
         </div>
+
+        {open && (
+          <div className="absolute left-0 right-0 top-full bg-black/95 border-b border-white/10 md:hidden">
+            <nav className="px-4 py-4 grid gap-3">
+              {nav.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  className={({ isActive }) =>
+                    `py-2 text-base ${isActive ? 'text-white' : 'text-white/80 hover:text-white'}`
+                  }
+                >
+                  {n.label}
+                </NavLink>
+              ))}
+              <Link
+                to="/quote"
+                className="mt-2 text-center px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold"
+              >
+                Get a Quote
+              </Link>
+              <Link
+                to="/call"
+                className="text-center px-3 py-2 rounded-md border border-white/10 text-white/90 hover:text-white"
+              >
+                Call Now
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   )

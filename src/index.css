@@ -10,6 +10,13 @@ body {
   @apply bg-black text-white antialiased;
 }
 
+/* Improve mobile scroll behavior and avoid bounce-back */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 /* Theme tokens as CSS variables */
 :root {
   --color-brand-red: #ef233c;

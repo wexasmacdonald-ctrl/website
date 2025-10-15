@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import MobileCTA from './components/MobileCTA'
+import { useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import About from './pages/About'
 import Services from './pages/Services'
@@ -10,8 +11,11 @@ import Call from './pages/Call'
 import Quote from './pages/Quote'
 
 export default function App() {
+  const location = useLocation()
+  const hideCTA = ['/call', '/quote', '/contact'].includes(location.pathname)
+
   return (
-    <div className="grain min-h-dvh flex flex-col">
+    <div className="grain min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
       <Header />
       <div className="flex-1">
         <Routes>
@@ -24,7 +28,7 @@ export default function App() {
         </Routes>
       </div>
       <Footer />
-      <MobileCTA />
+      {!hideCTA && <MobileCTA />}
     </div>
   )
 }
