@@ -18,7 +18,7 @@ export default function Contact() {
     const message = String(formData.get('message') || '')
 
     try {
-      const { error: insertError } = await supabase.from('leads').insert({ name, email, message, source: 'website' })
+      const { error: insertError } = await supabase.from('leads').insert({ name, email, message, source: 'contact' })
       if (insertError) throw insertError
       setStatus('success')
       form.reset()
@@ -84,7 +84,7 @@ export default function Contact() {
           <a href="tel:+18195767856" className="text-white/80 hover:text-white">or call +1 (819) 576‑7856</a>
         </div>
         {status === 'success' && (
-          <p className="text-sm text-emerald-400">Thanks — I received your request. I’ll reply shortly.</p>
+          <p className="text-sm text-emerald-400">Thanks — we received your request. We’ll reply shortly.</p>
         )}
         {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
       </form>
