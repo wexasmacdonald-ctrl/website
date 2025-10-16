@@ -22,6 +22,7 @@ export default async function handler(req: Req, res: Res) {
 
   // Parse JSON body
   let body = req.body
+  if (Buffer.isBuffer(body)) body = body.toString('utf8')
   if (!body || typeof body === 'string') { try { body = body ? JSON.parse(body) : {} } catch { body = {} } }
   const name = trim(body?.name)
   const email = trim(body?.email)
