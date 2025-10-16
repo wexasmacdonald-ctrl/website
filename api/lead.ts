@@ -34,15 +34,14 @@ export default async function handler(req: Req, res: Res) {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
   const RESEND_API_KEY = process.env.RESEND_API_KEY
-  const EMAIL_TO = process.env.EMAIL_TO
-  const EMAIL_FROM = process.env.EMAIL_FROM
+  const EMAIL_TO = process.env.EMAIL_TO || 'campbell@macdonaldautomation.com'
+  const PRIMARY_FROM = (process.env.EMAIL_FROM || 'MacDonald AI <onboarding@resend.dev>').trim()
   const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? 'true')
 
   if (!SUPABASE_URL) return res.status(500).json({ error: 'Missing SUPABASE_URL' })
   if (!SUPABASE_SERVICE_ROLE) return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE' })
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
   if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
-  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM' })
 
   try {
     // 1) Log to Supabase (server-side, service role)
@@ -61,21 +60,23 @@ export default async function handler(req: Req, res: Res) {
       <p style="margin:8px 0 4px 0;"><strong>Message:</strong></p>
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
+    let currentFrom = PRIMARY_FROM
     let notifyResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: EMAIL_FROM, to: [EMAIL_TO], subject, html: notifyHtml, text: notifyText, reply_to: email }),
+      body: JSON.stringify({ from: currentFrom, to: [EMAIL_TO], subject, html: notifyHtml, text: notifyText, reply_to: email }),
     })
     if (!notifyResp.ok) {
       const detail = await notifyResp.json().catch(() => ({}))
       // Retry with Resend onboarding sender as a safe fallback
       const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
-      if (EMAIL_FROM !== fallbackFrom) {
+      if (currentFrom !== fallbackFrom) {
         notifyResp = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ from: fallbackFrom, to: [EMAIL_TO], subject, html: notifyHtml, text: notifyText, reply_to: email }),
         })
+        currentFrom = fallbackFrom
       }
       if (!notifyResp.ok) {
         const retryDetail = await notifyResp.json().catch(() => ({}))
@@ -99,7 +100,7 @@ export default async function handler(req: Req, res: Res) {
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: EMAIL_FROM, to: [email], subject: ackSubject, html: ackHtml, text: ackText, reply_to: EMAIL_TO }),
+            body: JSON.stringify({ from: currentFrom, to: [email], subject: ackSubject, html: ackHtml, text: ackText, reply_to: EMAIL_TO }),
           })
         } catch {}
       })()
