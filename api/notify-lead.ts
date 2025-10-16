@@ -32,24 +32,40 @@ export default async function handler(req: any, res: any) {
     `
 
     // 1) Internal notification
-    const resp = await fetch('https://api.resend.com/emails', {
+    const notifyPayload = {
+      from,
+      to: [to],
+      subject,
+      html,
+      reply_to: replyTo,
+    }
+    let resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject,
-        html,
-        reply_to: replyTo,
-      }),
+      body: JSON.stringify(notifyPayload),
     })
-
-    const data = await resp.json()
+    let data = await resp.json()
     if (!resp.ok) {
-      return res.status(500).json({ error: data?.message || 'Failed to send email' })
+      console.error('Resend notify send failed', { status: resp.status, data })
+      const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
+      if (notifyPayload.from !== fallbackFrom) {
+        resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...notifyPayload, from: fallbackFrom }),
+        })
+        data = await resp.json()
+      }
+      if (!resp.ok) {
+        console.error('Resend notify retry failed', { status: resp.status, data })
+        return res.status(500).json({ error: data?.message || 'Failed to send email' })
+      }
     }
 
     // 2) Auto-reply to lead (best UX), non-blocking
@@ -67,21 +83,37 @@ export default async function handler(req: any, res: any) {
         </div>
       `
       try {
-        await fetch('https://api.resend.com/emails', {
+        const autoPayload = {
+          from,
+          to: [String(email)],
+          subject: ackSubject,
+          html: ackHtml,
+          text: ackText,
+          reply_to: to, // replies go to your inbox
+        }
+        let autoResp = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            from,
-            to: [String(email)],
-            subject: ackSubject,
-            html: ackHtml,
-            text: ackText,
-            reply_to: to, // replies go to your inbox
-          }),
+          body: JSON.stringify(autoPayload),
         })
+        if (!autoResp.ok) {
+          const autoData = await autoResp.json().catch(() => ({}))
+          console.error('Resend auto-reply failed', { status: autoResp.status, data: autoData })
+          const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
+          if (autoPayload.from !== fallbackFrom) {
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ ...autoPayload, from: fallbackFrom }),
+            }).catch(() => {})
+          }
+        }
       } catch {
         // ignore auto-reply errors to not block lead creation/notify
       }
