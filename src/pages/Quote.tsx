@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../lib/supabase'
+// Email + logging is handled server-side at /api/lead
 
 export default function Quote() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
@@ -17,33 +17,17 @@ export default function Quote() {
     const message = String(formData.get('message') || '')
 
     try {
-      const { error: insertError } = await supabase.from('leads').insert({ name, email, message, source: 'quote' })
-      if (insertError) throw insertError
+      const resp = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message, source: 'quote' }),
+      })
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}))
+        throw new Error(data?.error || 'Failed to submit')
+      }
       setStatus('success')
       form.reset()
-      // Notify via API, with Formsubmit fallback (no setup required)
-      try {
-        const resp = await fetch('/api/notify-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, message }),
-        })
-        if (!resp.ok) throw new Error('notify failed')
-      } catch {
-        try {
-          await fetch('https://formsubmit.co/ajax/campbell@macdonaldautomation.com', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({
-              name,
-              email,
-              message,
-              _subject: `New lead from ${name || 'Website'}`,
-              _template: 'table',
-            }),
-          })
-        } catch {}
-      }
     } catch (err: any) {
       setStatus('error')
       setError(err?.message || 'Something went wrong')
