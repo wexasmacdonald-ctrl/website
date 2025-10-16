@@ -61,14 +61,26 @@ export default async function handler(req: Req, res: Res) {
       <p style="margin:8px 0 4px 0;"><strong>Message:</strong></p>
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
-    const notifyResp = await fetch('https://api.resend.com/emails', {
+    let notifyResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: EMAIL_FROM, to: [EMAIL_TO], subject, html: notifyHtml, text: notifyText, reply_to: email }),
     })
     if (!notifyResp.ok) {
       const detail = await notifyResp.json().catch(() => ({}))
-      return res.status(502).json({ error: 'Failed to send notification', detail })
+      // Retry with Resend onboarding sender as a safe fallback
+      const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
+      if (EMAIL_FROM !== fallbackFrom) {
+        notifyResp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: fallbackFrom, to: [EMAIL_TO], subject, html: notifyHtml, text: notifyText, reply_to: email }),
+        })
+      }
+      if (!notifyResp.ok) {
+        const retryDetail = await notifyResp.json().catch(() => ({}))
+        return res.status(502).json({ error: 'Failed to send notification', detail: detail || retryDetail })
+      }
     }
 
     // 3) Auto-confirmation to client (non-blocking)
@@ -113,4 +125,3 @@ function escapeHtml(input: any) {
 function wrapHtml(inner: string) {
   return `<div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">${inner}</div>`
 }
-
