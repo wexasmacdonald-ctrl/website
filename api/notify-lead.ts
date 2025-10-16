@@ -1,57 +1,93 @@
-// Minimal email handler: requires only RESEND_API_KEY.
-// Uses defaults so you can just deploy.
+// Restored email handler (compatible with your previous setup)
 // POST /api/notify-lead with JSON: { name, email, message }
+// Env vars used:
+// - RESEND_API_KEY (required)
+// - EMAIL_TO (optional, default campbell@macdonaldautomation.com)
+// - RESEND_FROM or EMAIL_FROM (optional, default "MacDonald AI <onboarding@resend.dev>")
+// - RESEND_AUTOREPLY or EMAIL_AUTOREPLY (optional, default true)
 
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; send: (b: any) => void; end: () => void }
 
 export default async function handler(req: Req, res: Res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST, OPTIONS'); return res.status(405).send('Method Not Allowed') }
 
-  const RESEND_API_KEY = process.env.RESEND_API_KEY
-  const EMAIL_FROM = process.env.EMAIL_FROM
-  const EMAIL_TO = process.env.EMAIL_TO
-  if (!RESEND_API_KEY) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
-  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM' })
-  if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
-
   try {
+    // Parse JSON body
     let body = req.body
-    if (!body || typeof body === 'string') { try { body = body ? JSON.parse(body) : {} } catch { body = {} } }
-    const name = typeof body?.name === 'string' ? body.name.trim() : ''
-    const email = typeof body?.email === 'string' ? body.email.trim() : ''
-    const message = typeof body?.message === 'string' ? body.message.trim() : ''
+    if (typeof body === 'string') { try { body = JSON.parse(body) } catch { body = {} } }
+    const name = String(body?.name || '').trim()
+    const email = String(body?.email || '').trim()
+    const message = String(body?.message || '').trim()
 
-    if (!email || !message) return res.status(400).json({ error: 'email and message are required' })
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
+
+    const to = process.env.EMAIL_TO || 'campbell@macdonaldautomation.com'
+    const from = process.env.EMAIL_FROM || process.env.RESEND_FROM || 'MacDonald AI <onboarding@resend.dev>'
+    const autoReplyEnabled = normalizeBool(process.env.EMAIL_AUTOREPLY ?? process.env.RESEND_AUTOREPLY ?? 'true')
+    const replyTo = isEmail(email) ? email : undefined
 
     const subject = `New lead from ${name || 'Website'}`
-    const html = wrapHtml(`
+    const html = htmlWrap(`
       <h2 style="margin:0 0 8px 0;">New Lead</h2>
-      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p style="margin:4px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
       <p style="margin:8px 0 4px 0;"><strong>Message:</strong></p>
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
 
-    const resp = await fetch('https://api.resend.com/emails', {
+    // Send notification
+    const notifyPayload = { from, to: [to], subject, html, text: `Name: ${name}\nEmail: ${email}\n\n${message}`, reply_to: replyTo }
+    let resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [EMAIL_TO],
-        subject,
-        html,
-        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-        reply_to: email,
-      }),
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(notifyPayload),
     })
+    let data: any = null
+    try { data = await resp.json() } catch { /* ignore */ }
     if (!resp.ok) {
-      const data = await resp.json().catch(() => ({}))
-      return res.status(502).json({ error: data?.message || 'Failed to send email' })
+      // Retry with fallback FROM if needed
+      const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
+      if (notifyPayload.from !== fallbackFrom) {
+        resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...notifyPayload, from: fallbackFrom }),
+        })
+        try { data = await resp.json() } catch { /* ignore */ }
+      }
+      if (!resp.ok) {
+        return res.status(500).json({ error: data?.message || 'Failed to send email' })
+      }
+    }
+
+    // Non-blocking auto-reply
+    if (autoReplyEnabled && replyTo) {
+      const ackSubject = 'Thanks - we received your message'
+      const safeName = escapeHtml(name) || 'there'
+      const ackText = `Hi ${name || 'there'},\n\nThanks for reaching out to MacDonald AI. We received your message and will get back to you shortly.\n\n- MacDonald AI\n`
+      const ackHtml = htmlWrap(`
+        <p>Hi ${safeName},</p>
+        <p>Thanks for reaching out to <strong>MacDonald AI</strong>. We received your message and will get back to you shortly.</p>
+        <p style="margin:16px 0 4px 0;color:#666;">For your records:</p>
+        <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
+        <p style="margin-top:16px;">- MacDonald AI</p>
+      `)
+      ;(async () => {
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from, to: [email], subject: ackSubject, html: ackHtml, text: ackText, reply_to: to }),
+          })
+        } catch { /* ignore */ }
+      })()
     }
 
     return res.status(200).json({ ok: true })
@@ -60,9 +96,17 @@ export default async function handler(req: Req, res: Res) {
   }
 }
 
+function isEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) }
+function normalizeBool(v: any) { const s = String(v).toLowerCase(); return !(s === 'false' || s === '0' || s === '') }
 function escapeHtml(input: any) {
-  return String(input || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+  return String(input || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
-function wrapHtml(inner: string) {
+function htmlWrap(inner: string) {
   return `<div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">${inner}</div>`
 }
+
