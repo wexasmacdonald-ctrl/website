@@ -1,121 +1,116 @@
-// Vercel Serverless Function: sends email on new lead
-// Configure env vars in Vercel: RESEND_API_KEY, EMAIL_TO (optional)
+// Email notify endpoint (clean slate)
+// Set these env vars in Vercel Project Settings → Environment Variables:
+// - RESEND_API_KEY (required)
+// - EMAIL_TO (required, e.g. you@yourdomain.com)
+// - EMAIL_FROM (required, verified sender, e.g. "Your Name <you@yourdomain.com>")
+// - EMAIL_AUTOREPLY (optional: "true" | "false", default true)
 
-export default async function handler(req: any, res: any) {
+type Req = { method: string; headers: any; body?: any } & Record<string, any>
+type Res = {
+  status: (n: number) => Res
+  json: (b: any) => void
+  setHeader: (k: string, v: string) => void
+  send: (b: any) => void
+  end: () => void
+}
+
+export default async function handler(req: Req, res: Res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST')
+    res.setHeader('Allow', 'POST, OPTIONS')
     return res.status(405).send('Method Not Allowed')
   }
 
   try {
-    const { name, email, message } = req.body || {}
+    // Parse JSON body safely
+    let body = req.body
+    if (!body || typeof body === 'string') {
+      try { body = body ? JSON.parse(body) : {} } catch { body = {} }
+    }
+    const name = trimToString(body?.name)
+    const email = trimToString(body?.email)
+    const message = trimToString(body?.message)
 
-    const apiKey = process.env.RESEND_API_KEY
-    const to = process.env.EMAIL_TO || 'campbell@macdonaldautomation.com'
-    const from = process.env.RESEND_FROM || 'MacDonald AI <onboarding@resend.dev>'
-    const replyTo = email && String(email).includes('@') ? String(email) : undefined
-    const autoReplyEnabled = (process.env.RESEND_AUTOREPLY ?? 'true').toLowerCase() !== 'false' && (process.env.RESEND_AUTOREPLY ?? 'true') !== '0'
-
-    if (!apiKey) {
-      return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'name, email, and message are required' })
+    }
+    if (!isEmail(email)) {
+      return res.status(400).json({ error: 'invalid email' })
     }
 
-    const subject = `New lead from ${name || 'Website'}`
-    const html = `
-      <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">
-        <h2 style="margin:0 0 8px 0;">New Lead</h2>
-        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p style="margin:4px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p style="margin:8px 0 4px 0;"><strong>Message:</strong></p>
-        <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
-      </div>
-    `
+    const RESEND_API_KEY = process.env.RESEND_API_KEY
+    const EMAIL_TO = process.env.EMAIL_TO
+    const EMAIL_FROM = process.env.EMAIL_FROM
+    const EMAIL_AUTOREPLY = (process.env.EMAIL_AUTOREPLY ?? 'true').toLowerCase() !== 'false' && (process.env.EMAIL_AUTOREPLY ?? 'true') !== '0'
 
-    // 1) Internal notification
-    const notifyPayload = {
-      from,
-      to: [to],
-      subject,
-      html,
-      reply_to: replyTo,
-    }
-    let resp = await fetch('https://api.resend.com/emails', {
+    if (!RESEND_API_KEY) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
+    if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
+    if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM' })
+
+    // Internal notification
+    const subject = `New lead from ${name}`
+    const notifyText = `New Lead\n\nName: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+    const notifyHtml = htmlWrap(`
+      <h2 style="margin:0 0 8px 0;">New Lead</h2>
+      <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p style="margin:4px 0;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p style="margin:8px 0 4px 0;"><strong>Message:</strong></p>
+      <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
+    `)
+
+    const notifyResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(notifyPayload),
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [EMAIL_TO],
+        subject,
+        html: notifyHtml,
+        text: notifyText,
+        reply_to: email,
+      }),
     })
-    let data = await resp.json()
-    if (!resp.ok) {
-      console.error('Resend notify send failed', { status: resp.status, data })
-      const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
-      if (notifyPayload.from !== fallbackFrom) {
-        resp = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...notifyPayload, from: fallbackFrom }),
-        })
-        data = await resp.json()
-      }
-      if (!resp.ok) {
-        console.error('Resend notify retry failed', { status: resp.status, data })
-        return res.status(500).json({ error: data?.message || 'Failed to send email' })
-      }
+    if (!notifyResp.ok) {
+      const data = await notifyResp.json().catch(() => ({}))
+      return res.status(502).json({ error: data?.message || 'Failed to send notification' })
     }
 
-    // 2) Auto-reply to lead (best UX), non-blocking
-    if (autoReplyEnabled && replyTo) {
-      const ackSubject = `Thanks — we received your message`
-      const safeName = escapeHtml(name) || 'there'
-      const ackText = `Hi ${safeName},\n\nThanks for reaching out to MacDonald AI. We received your message and will get back to you shortly.\n\n— MacDonald AI\n`
-      const ackHtml = `
-        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">
-          <p>Hi ${safeName},</p>
-          <p>Thanks for reaching out to <strong>MacDonald AI</strong>. We received your message and will get back to you shortly.</p>
-          <p style="margin:16px 0 4px 0;color:#666;">For your records:</p>
-          <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
-          <p style="margin-top:16px;">— MacDonald AI</p>
-        </div>
-      `
+    // Auto-reply (optional, non-blocking)
+    if (EMAIL_AUTOREPLY) {
+      const ackSubject = 'Thanks — we received your message'
+      const ackText = `Hi ${name},\n\nThanks for reaching out. We received your message and will get back to you shortly.\n\n- MacDonald AI\n`
+      const ackHtml = htmlWrap(`
+        <p>Hi ${escapeHtml(name)},</p>
+        <p>Thanks for reaching out. We received your message and will get back to you shortly.</p>
+        <p style=\"margin:16px 0 4px 0;color:#666;\">For your records:</p>
+        <pre style=\"white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;\">${escapeHtml(message)}</pre>
+        <p style=\"margin-top:16px;\">- MacDonald AI</p>
+      `)
       try {
-        const autoPayload = {
-          from,
-          to: [String(email)],
-          subject: ackSubject,
-          html: ackHtml,
-          text: ackText,
-          reply_to: to, // replies go to your inbox
-        }
-        let autoResp = await fetch('https://api.resend.com/emails', {
+        await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${RESEND_API_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(autoPayload),
+          body: JSON.stringify({
+            from: EMAIL_FROM,
+            to: [email],
+            subject: ackSubject,
+            html: ackHtml,
+            text: ackText,
+            reply_to: EMAIL_TO,
+          }),
         })
-        if (!autoResp.ok) {
-          const autoData = await autoResp.json().catch(() => ({}))
-          console.error('Resend auto-reply failed', { status: autoResp.status, data: autoData })
-          const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
-          if (autoPayload.from !== fallbackFrom) {
-            await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ ...autoPayload, from: fallbackFrom }),
-            }).catch(() => {})
-          }
-        }
       } catch {
-        // ignore auto-reply errors to not block lead creation/notify
+        // ignore auto-reply errors
       }
     }
 
@@ -125,11 +120,27 @@ export default async function handler(req: any, res: any) {
   }
 }
 
+function trimToString(v: any) {
+  return typeof v === 'string' ? v.trim() : ''
+}
+
+function isEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+}
+
 function escapeHtml(input: any) {
   return String(input || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
+
+function htmlWrap(inner: string) {
+  return `
+  <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">
+    ${inner}
+  </div>`
+}
+
