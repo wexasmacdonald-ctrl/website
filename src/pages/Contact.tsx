@@ -22,15 +22,31 @@ export default function Contact() {
       if (insertError) throw insertError
       setStatus('success')
       form.reset()
-      // Fire-and-forget notification (works after deploy on Vercel)
+      // Notify via API, with Formsubmit fallback (no setup required)
       try {
-        await fetch('/api/notify-lead', {
+        const resp = await fetch('/api/notify-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, message }),
         })
+        if (!resp.ok) throw new Error('notify failed')
       } catch {
-        // ignore in local dev
+        // Fallback: send via Formsubmit directly to inbox
+        try {
+          await fetch('https://formsubmit.co/ajax/campbell@macdonaldautomation.com', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              name,
+              email,
+              message,
+              _subject: `New lead from ${name || 'Website'}`,
+              _template: 'table',
+            }),
+          })
+        } catch {
+          // ignore
+        }
       }
     } catch (err: any) {
       setStatus('error')

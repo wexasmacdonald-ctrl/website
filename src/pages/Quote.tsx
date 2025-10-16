@@ -21,13 +21,29 @@ export default function Quote() {
       if (insertError) throw insertError
       setStatus('success')
       form.reset()
+      // Notify via API, with Formsubmit fallback (no setup required)
       try {
-        await fetch('/api/notify-lead', {
+        const resp = await fetch('/api/notify-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, message }),
         })
-      } catch {}
+        if (!resp.ok) throw new Error('notify failed')
+      } catch {
+        try {
+          await fetch('https://formsubmit.co/ajax/campbell@macdonaldautomation.com', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({
+              name,
+              email,
+              message,
+              _subject: `New lead from ${name || 'Website'}`,
+              _template: 'table',
+            }),
+          })
+        } catch {}
+      }
     } catch (err: any) {
       setStatus('error')
       setError(err?.message || 'Something went wrong')
@@ -62,4 +78,3 @@ export default function Quote() {
     </main>
   )
 }
-
