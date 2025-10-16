@@ -90,7 +90,7 @@ export default function Contact() {
       </form>
 
       <div className="mt-8 text-sm text-white/60">
-        Prefer email? <a className="underline" href="mailto:j.campbellmacdonald@gmail.com">j.campbellmacdonald@gmail.com</a>
+        Prefer email? <a className="underline" href="mailto:campbell@macdonaldautomation.com">campbell@macdonaldautomation.com</a>
       </div>
     </main>
   )
