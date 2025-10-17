@@ -5,7 +5,7 @@
 // - SUPABASE_SERVICE_ROLE (required; service role key, NOT anon)
 // - RESEND_API_KEY (required; secret key from https://resend.com)
 // - EMAIL_TO (optional; default canpbell@macdonaldautomations.com)
-// - EMAIL_FROM or RESEND_FROM (optional; default "MacDonald AI <onboarding@resend.dev>")
+// - EMAIL_FROM or RESEND_FROM (required; must match a verified Resend domain, e.g. "MacDonald AI <team@macdonaldautomation.com>")
 // - EMAIL_AUTOREPLY or RESEND_AUTOREPLY (optional; default true)
 
 import { createClient } from '@supabase/supabase-js'
@@ -36,14 +36,14 @@ export default async function handler(req: Req, res: Res) {
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
   const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim()
   const EMAIL_TO = (process.env.EMAIL_TO || 'canpbell@macdonaldautomations.com').trim()
-  const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.RESEND_FROM || 'MacDonald AI <onboarding@resend.dev>').trim()
+  const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.RESEND_FROM || '').trim()
   const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? process.env.RESEND_AUTOREPLY ?? 'true')
 
   if (!SUPABASE_URL) return res.status(500).json({ error: 'Missing SUPABASE_URL' })
   if (!SUPABASE_SERVICE_ROLE) return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE' })
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
   if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
-  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM' })
+  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM (set to a verified sender email)' })
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
@@ -64,7 +64,6 @@ export default async function handler(req: Req, res: Res) {
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
 
-    const fallbackFrom = 'MacDonald AI <onboarding@resend.dev>'
     const notifyPayload = {
       from: EMAIL_FROM,
       to: [EMAIL_TO],
@@ -74,7 +73,7 @@ export default async function handler(req: Req, res: Res) {
       html: notifyHtml,
     }
 
-    const notifyResult = await sendResendEmail(RESEND_API_KEY, notifyPayload, fallbackFrom)
+    const notifyResult = await sendResendEmail(RESEND_API_KEY, notifyPayload)
     if (!notifyResult.ok) {
       console.error('Resend notification failed', notifyResult)
       return res.status(502).json({ error: notifyResult.error || 'Failed to send notification email' })
@@ -101,7 +100,7 @@ export default async function handler(req: Req, res: Res) {
             text: ackText,
             html: ackHtml,
           }
-          const ackResult = await sendResendEmail(RESEND_API_KEY, ackPayload, fallbackFrom)
+          const ackResult = await sendResendEmail(RESEND_API_KEY, ackPayload)
           if (!ackResult.ok) {
             console.error('Resend auto-reply failed', ackResult)
           }
@@ -133,15 +132,9 @@ function htmlWrap(inner: string) {
   return `<div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">${inner}</div>`
 }
 
-async function sendResendEmail(apiKey: string, payload: Record<string, any>, fallbackFrom?: string) {
+async function sendResendEmail(apiKey: string, payload: Record<string, any>) {
   const primary = await postResendEmail(apiKey, payload)
   if (primary.ok) return { ok: true, usedFrom: payload.from }
-
-  if (fallbackFrom && payload.from !== fallbackFrom) {
-    const retry = await postResendEmail(apiKey, { ...payload, from: fallbackFrom })
-    if (retry.ok) return { ok: true, usedFrom: fallbackFrom }
-    return { ok: false, status: retry.status, error: retry.error, usedFrom: fallbackFrom }
-  }
 
   return { ok: false, status: primary.status, error: primary.error, usedFrom: payload.from }
 }
