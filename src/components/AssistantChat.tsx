@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, FormEvent } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
@@ -92,15 +93,15 @@ export default function AssistantChat() {
                 key={`${msg.role}-${idx}`}
                 className={msg.role === 'user' ? 'text-right' : 'text-left'}
               >
-                <div
-                  className={`inline-block rounded-lg px-3 py-2 ${
-                    msg.role === 'user'
-                      ? 'bg-[--color-brand-red] text-black'
-                      : 'bg-white/8 text-white'
-                  }`}
-                >
-                  {msg.content}
-                </div>
+                {msg.role === 'user' ? (
+                  <div className="inline-block max-w-[80%] rounded-lg bg-[--color-brand-red] px-3 py-2 text-black">
+                    {msg.content}
+                  </div>
+                ) : (
+                  <div className="inline-block max-w-[80%] rounded-lg bg-white/8 px-3 py-2 text-white">
+                    <ReactMarkdown className="assistant-markdown">{msg.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
             ))}
             {loading && (

@@ -41,3 +41,22 @@ html, body {
 .red-glow {
   box-shadow: 0 0 60px rgba(239, 35, 60, 0.25);
 }
+
+.assistant-markdown {
+  @apply space-y-2 text-sm leading-relaxed;
+}
+.assistant-markdown p {
+  @apply text-white m-0;
+}
+.assistant-markdown strong {
+  @apply text-white font-semibold;
+}
+.assistant-markdown ul {
+  @apply list-disc pl-5 space-y-1;
+}
+.assistant-markdown code {
+  @apply rounded bg-white/10 px-1 py-0.5 text-[0.85em];
+}
+.assistant-markdown pre {
+  @apply overflow-x-auto rounded-md bg-white/10 p-3 text-[0.85em];
+}
