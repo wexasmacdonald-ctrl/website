@@ -1,6 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Logo from './Logo'
+import { CALENDLY_URL } from '../lib/calendly'
 
 const nav = [
   { to: '/', label: 'Home' },
@@ -36,12 +37,14 @@ export default function Header() {
               {n.label}
             </NavLink>
           ))}
-          <Link
-            to="/call"
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noreferrer"
             className="text-sm px-3 py-2 rounded-md border border-[--color-brand-red]/40 text-white bg-[--color-brand-red]/10 hover:bg-[--color-brand-red]/20"
           >
-            Call Now
-          </Link>
+            Book a Call
+          </a>
           <Link
             to="/quote"
             className="text-sm px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold hover:opacity-90"
@@ -50,7 +53,15 @@ export default function Header() {
           </Link>
         </nav>
         <div className="md:hidden ml-auto flex items-center gap-2">
-          <Link to="/call" aria-label="Call Now" className="px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold">Call</Link>
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Book a Call"
+            className="px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold"
+          >
+            Book
+          </a>
           <button
             aria-label={open ? 'Close menu' : 'Open menu'}
             onClick={() => setOpen((v) => !v)}
@@ -82,12 +93,14 @@ export default function Header() {
               >
                 Get a Quote
               </Link>
-              <Link
-                to="/call"
+              <a
+                href={CALENDLY_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="text-center px-3 py-2 rounded-md border border-white/10 text-white/90 hover:text-white"
               >
-                Call Now
-              </Link>
+                Book a Call
+              </a>
             </nav>
           </div>
         )}

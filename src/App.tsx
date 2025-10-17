@@ -7,13 +7,12 @@ import Home from './pages/Home'
 import About from './pages/About'
 import Services from './pages/Services'
 import Contact from './pages/Contact'
-import Call from './pages/Call'
 import Quote from './pages/Quote'
 import AssistantChat from './components/AssistantChat'
 
 export default function App() {
   const location = useLocation()
-  const hideCTA = ['/call', '/quote', '/contact'].includes(location.pathname)
+  const hideCTA = ['/quote', '/contact'].includes(location.pathname)
 
   return (
     <div className="grain min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
@@ -24,7 +23,6 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/call" element={<Call />} />
           <Route path="/quote" element={<Quote />} />
         </Routes>
       </div>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { CALENDLY_URL } from '../lib/calendly'
 
 export default function Hero() {
   return (
@@ -32,12 +33,14 @@ export default function Hero() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="mt-8 flex flex-wrap justify-center items-center gap-3"
         >
-          <Link
-            to="/call"
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noreferrer"
             className="px-5 py-3 rounded-md bg-[--color-brand-red] text-black font-semibold hover:opacity-90 shadow-sm"
           >
-            Call Now
-          </Link>
+            Book a Call
+          </a>
           <Link
             to="/quote"
             className="px-5 py-3 rounded-md border border-white/20 hover:border-white/40 text-white"
