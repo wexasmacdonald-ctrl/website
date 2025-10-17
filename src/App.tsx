@@ -9,6 +9,7 @@ import Services from './pages/Services'
 import Contact from './pages/Contact'
 import Call from './pages/Call'
 import Quote from './pages/Quote'
+import AssistantChat from './components/AssistantChat'
 
 export default function App() {
   const location = useLocation()
@@ -29,6 +30,7 @@ export default function App() {
       </div>
       <Footer />
       {!hideCTA && <MobileCTA />}
+      <AssistantChat />
     </div>
   )
 }
