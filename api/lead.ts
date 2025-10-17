@@ -34,7 +34,7 @@ export default async function handler(req: Req, res: Res) {
 
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
-  const RESEND_API_KEY = process.env.RESEND_API_KEY
+  const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim()
   const EMAIL_TO = (process.env.EMAIL_TO || 'canpbell@macdonaldautomations.com').trim()
   const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.RESEND_FROM || 'MacDonald AI <onboarding@resend.dev>').trim()
   const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? process.env.RESEND_AUTOREPLY ?? 'true')
