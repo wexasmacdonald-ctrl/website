@@ -85,10 +85,11 @@ export default async function handler(req: Req, res: Res) {
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
 
+    const notifyRecipients = Array.from(new Set([EMAIL_TO, email].filter(Boolean)))
     const notifyPayload = {
       from: EMAIL_FROM,
-      to: [EMAIL_TO],
-      reply_to: email,
+      to: notifyRecipients.join(', '),
+      replyTo: email,
       subject,
       text: notifyText,
       html: notifyHtml,
@@ -112,21 +113,18 @@ export default async function handler(req: Req, res: Res) {
         <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
         <p style="margin-top:16px;">- MacDonald AI</p>
       `)
-      ;(async () => {
-        try {
-          const ackPayload = {
-            from: EMAIL_FROM,
-            to: [email],
-            reply_to: EMAIL_TO,
-            subject: ackSubject,
-            text: ackText,
-            html: ackHtml,
-          }
-          await transporter.sendMail(ackPayload)
-        } catch (ackError) {
-          console.error('SMTP auto-reply threw', ackError)
-        }
-      })()
+      try {
+        await transporter.sendMail({
+          from: EMAIL_FROM,
+          to: email,
+          replyTo: EMAIL_TO,
+          subject: ackSubject,
+          text: ackText,
+          html: ackHtml,
+        })
+      } catch (ackError) {
+        console.error('SMTP auto-reply failed', ackError)
+      }
     }
 
     return res.status(200).json({ ok: true })
