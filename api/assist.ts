@@ -40,12 +40,12 @@ export default async function handler(req: Req, res: Res) {
 
   try {
     const payload = {
-      model: 'gpt-4.1-mini',
+      model: 'gpt-5-mini',
       input: [
-        { role: 'system', content: [{ type: 'text', text: SYSTEM_PROMPT }] },
+        { role: 'system', content: [{ type: 'input_text', text: SYSTEM_PROMPT }] },
         ...normalizedMessages.map((msg) => ({
           role: msg.role,
-          content: [{ type: 'text', text: msg.content }],
+          content: [{ type: 'input_text', text: msg.content }],
         })),
       ],
     }
@@ -82,20 +82,23 @@ function normalizeRole(role: any) {
 
 function extractText(data: any) {
   try {
-    const segments = data?.output ?? data?.outputs ?? []
-    for (const segment of segments) {
-      const content = segment?.content
+    const outputs = data?.output ?? data?.outputs ?? []
+    for (const item of outputs) {
+      const content = item?.content
       if (Array.isArray(content)) {
-        for (const child of content) {
-          const text = child?.text?.value ?? child?.text
-          if (typeof text === 'string' && text.trim()) return text.trim()
+        for (const block of content) {
+          if (block?.type === 'output_text' && typeof block?.text === 'string' && block.text.trim()) {
+            return block.text.trim()
+          }
         }
       }
-      const text = segment?.text ?? segment?.content ?? ''
-      if (typeof text === 'string' && text.trim()) return text.trim()
+      if (typeof item?.output_text === 'string' && item.output_text.trim()) {
+        return item.output_text.trim()
+      }
     }
   } catch (err) {
     console.error('assist extractText error', err)
   }
+  if (typeof data?.output_text === 'string' && data.output_text.trim()) return data.output_text.trim()
   return null
 }
