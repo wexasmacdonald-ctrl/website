@@ -8,7 +8,12 @@ import { join } from 'path'
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; end: () => void }
 
-const servicesCatalog = readFileSync(join(process.cwd(), 'src/lib/services.md'), 'utf8')
+let servicesCatalog = ''
+try {
+  servicesCatalog = readFileSync(join(process.cwd(), 'src/lib/services.md'), 'utf8')
+} catch (err) {
+  console.error('assist: unable to load services catalog', err)
+}
 
 const systemPrompt = [
   "You are MacDonald Automation's assistant.",
@@ -18,7 +23,9 @@ const systemPrompt = [
   "Reference the detailed services catalog below when answering:",
 ].join(' ')
 
-const SYSTEM_PROMPT = `${systemPrompt}\n\n${servicesCatalog}`
+const SYSTEM_PROMPT = servicesCatalog
+  ? `${systemPrompt}\n\n${servicesCatalog}`
+  : ''
 
 export default async function handler(req: Req, res: Res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -32,6 +39,7 @@ export default async function handler(req: Req, res: Res) {
 
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' })
+  if (!SYSTEM_PROMPT) return res.status(500).json({ error: 'Services catalog unavailable' })
 
   let body = req.body
   if (Buffer.isBuffer(body)) body = body.toString('utf8')
@@ -53,12 +61,12 @@ export default async function handler(req: Req, res: Res) {
 
   try {
     const payload = {
-      model: 'gpt-5-mini',
+      model: 'gpt-4.1-mini',
       input: [
-        { role: 'system', content: [{ type: 'input_text', text: SYSTEM_PROMPT }] },
+        { role: 'system', content: [{ type: 'text', text: SYSTEM_PROMPT }] },
         ...normalizedMessages.map((msg) => ({
           role: msg.role,
-          content: [{ type: 'input_text', text: msg.content }],
+          content: [{ type: 'text', text: msg.content }],
         })),
       ],
     }

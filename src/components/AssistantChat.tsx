@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 type Message = { role: 'user' | 'assistant'; content: string }
+const STORAGE_KEY = 'macdonald-assistant-history'
 
 export default function AssistantChat() {
   const [isOpen, setIsOpen] = useState(false)
@@ -18,6 +19,28 @@ export default function AssistantChat() {
     }, 50)
     return () => clearTimeout(timer)
   }, [messages, isOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed: Message[] = JSON.parse(stored)
+        if (Array.isArray(parsed)) setMessages(parsed.filter((msg) => msg.role && msg.content))
+      }
+    } catch (err) {
+      console.error('assistant chat load failed', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+    } catch {
+      /* ignore storage failures */
+    }
+  }, [messages])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
