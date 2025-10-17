@@ -1,14 +1,19 @@
-// Lead intake API: logs submissions to Supabase and notifies via Resend
+// Lead intake API: logs submissions to Supabase and notifies via Google Workspace SMTP
 // POST /api/lead with JSON: { name, email, message, source? }
 // Env (Production in Vercel):
 // - SUPABASE_URL (required)
 // - SUPABASE_SERVICE_ROLE (required; service role key, NOT anon)
-// - RESEND_API_KEY (required; secret key from https://resend.com)
 // - EMAIL_TO (optional; default campbell@macdonaldautomation.com)
-// - EMAIL_FROM or RESEND_FROM (required; must match a verified Resend domain, e.g. "MacDonald AI <team@macdonaldautomation.com>")
-// - EMAIL_AUTOREPLY or RESEND_AUTOREPLY (optional; default true)
+// - EMAIL_FROM (optional; default SMTP_USER)
+// - EMAIL_AUTOREPLY (optional; default true)
+// - SMTP_HOST (optional; default smtp.gmail.com)
+// - SMTP_PORT (optional; default 465)
+// - SMTP_SECURE (optional; default true if port 465 else false)
+// - SMTP_USER (required; Google Workspace address with app password)
+// - SMTP_PASS (required; app password or SMTP relay password)
 
 import { createClient } from '@supabase/supabase-js'
+import nodemailer from 'nodemailer'
 
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; send: (b: any) => void; end: () => void }
@@ -34,16 +39,22 @@ export default async function handler(req: Req, res: Res) {
 
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
-  const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim()
   const EMAIL_TO = (process.env.EMAIL_TO || 'campbell@macdonaldautomation.com').trim()
-  const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.RESEND_FROM || '').trim()
-  const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? process.env.RESEND_AUTOREPLY ?? 'true')
+  const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.SMTP_USER || '').trim()
+  const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? 'true')
+  const SMTP_HOST = (process.env.SMTP_HOST || 'smtp.gmail.com').trim()
+  const SMTP_PORT_RAW = (process.env.SMTP_PORT || '').trim()
+  const SMTP_PORT = Number(SMTP_PORT_RAW || '465')
+  const SMTP_SECURE = normalizeBool(process.env.SMTP_SECURE ?? (SMTP_PORT === 465 ? 'true' : 'false'))
+  const SMTP_USER = (process.env.SMTP_USER || '').trim()
+  const SMTP_PASS = (process.env.SMTP_PASS || '').trim()
 
   if (!SUPABASE_URL) return res.status(500).json({ error: 'Missing SUPABASE_URL' })
   if (!SUPABASE_SERVICE_ROLE) return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE' })
-  if (!RESEND_API_KEY) return res.status(500).json({ error: 'Missing RESEND_API_KEY' })
   if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
-  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM (set to a verified sender email)' })
+  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM (defaults to SMTP_USER)' })
+  if (!SMTP_USER) return res.status(500).json({ error: 'Missing SMTP_USER' })
+  if (!SMTP_PASS) return res.status(500).json({ error: 'Missing SMTP_PASS' })
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
@@ -52,6 +63,16 @@ export default async function handler(req: Req, res: Res) {
       console.error('Supabase lead insert failed', insertError)
       return res.status(500).json({ error: insertError.message || 'Failed to log lead' })
     }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: Number.isNaN(SMTP_PORT) ? 465 : SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    })
 
     const subject = `New lead from ${name}`
     const notifyText = `New Lead\n\nName: ${name}\nEmail: ${email}\nSource: ${source}\n\nMessage:\n${message}`
@@ -73,10 +94,11 @@ export default async function handler(req: Req, res: Res) {
       html: notifyHtml,
     }
 
-    const notifyResult = await sendResendEmail(RESEND_API_KEY, notifyPayload)
-    if (!notifyResult.ok) {
-      console.error('Resend notification failed', notifyResult)
-      return res.status(502).json({ error: notifyResult.error || 'Failed to send notification email' })
+    try {
+      await transporter.sendMail(notifyPayload)
+    } catch (mailError: any) {
+      console.error('SMTP notification failed', mailError)
+      return res.status(502).json({ error: mailError?.message || 'Failed to send notification email' })
     }
 
     if (EMAIL_AUTOREPLY) {
@@ -93,19 +115,16 @@ export default async function handler(req: Req, res: Res) {
       ;(async () => {
         try {
           const ackPayload = {
-            from: notifyResult.usedFrom || EMAIL_FROM,
+            from: EMAIL_FROM,
             to: [email],
             reply_to: EMAIL_TO,
             subject: ackSubject,
             text: ackText,
             html: ackHtml,
           }
-          const ackResult = await sendResendEmail(RESEND_API_KEY, ackPayload)
-          if (!ackResult.ok) {
-            console.error('Resend auto-reply failed', ackResult)
-          }
+          await transporter.sendMail(ackPayload)
         } catch (ackError) {
-          console.error('Resend auto-reply threw', ackError)
+          console.error('SMTP auto-reply threw', ackError)
         }
       })()
     }
@@ -130,31 +149,4 @@ function escapeHtml(input: any) {
 }
 function htmlWrap(inner: string) {
   return `<div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5;">${inner}</div>`
-}
-
-async function sendResendEmail(apiKey: string, payload: Record<string, any>) {
-  const primary = await postResendEmail(apiKey, payload)
-  if (primary.ok) return { ok: true, usedFrom: payload.from }
-
-  return { ok: false, status: primary.status, error: primary.error, usedFrom: payload.from }
-}
-
-async function postResendEmail(apiKey: string, body: Record<string, any>) {
-  const resp = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  const raw = await resp.text().catch(() => '')
-  let json: any = null
-  try { json = raw ? JSON.parse(raw) : null } catch { /* ignore */ }
-  return {
-    ok: resp.ok,
-    status: resp.status,
-    error: json?.message || raw || null,
-    json,
-  }
 }
