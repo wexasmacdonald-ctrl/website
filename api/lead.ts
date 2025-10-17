@@ -4,7 +4,7 @@
 // - SUPABASE_URL (required)
 // - SUPABASE_SERVICE_ROLE (required; service role key, NOT anon)
 // - RESEND_API_KEY (required; secret key from https://resend.com)
-// - EMAIL_TO (optional; default canpbell@macdonaldautomations.com)
+// - EMAIL_TO (optional; default campbell@macdonaldautomation.com)
 // - EMAIL_FROM or RESEND_FROM (required; must match a verified Resend domain, e.g. "MacDonald AI <team@macdonaldautomation.com>")
 // - EMAIL_AUTOREPLY or RESEND_AUTOREPLY (optional; default true)
 
@@ -35,7 +35,7 @@ export default async function handler(req: Req, res: Res) {
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
   const RESEND_API_KEY = (process.env.RESEND_API_KEY || '').trim()
-  const EMAIL_TO = (process.env.EMAIL_TO || 'canpbell@macdonaldautomations.com').trim()
+  const EMAIL_TO = (process.env.EMAIL_TO || 'campbell@macdonaldautomation.com').trim()
   const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.RESEND_FROM || '').trim()
   const EMAIL_AUTOREPLY = normalizeBool(process.env.EMAIL_AUTOREPLY ?? process.env.RESEND_AUTOREPLY ?? 'true')
 
