@@ -85,10 +85,9 @@ export default async function handler(req: Req, res: Res) {
       <pre style="white-space:pre-wrap;background:#f6f6f6;padding:12px;border-radius:8px;">${escapeHtml(message)}</pre>
     `)
 
-    const notifyRecipients = Array.from(new Set([EMAIL_TO, email].filter(Boolean)))
     const notifyPayload = {
       from: EMAIL_FROM,
-      to: notifyRecipients.join(', '),
+      to: EMAIL_TO,
       replyTo: email,
       subject,
       text: notifyText,
