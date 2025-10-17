@@ -8,12 +8,15 @@ import { join } from 'path'
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; end: () => void }
 
-let servicesCatalog = ''
-try {
-  servicesCatalog = readFileSync(join(process.cwd(), 'src/lib/services.md'), 'utf8')
-} catch (err) {
-  console.error('assist: unable to load services catalog', err)
-}
+const catalogPath = join(process.cwd(), 'src/lib/services.md')
+const servicesCatalog = (() => {
+  try {
+    return readFileSync(catalogPath, 'utf8')
+  } catch (err) {
+    console.error('assist: unable to load services catalog', err)
+    return ''
+  }
+})()
 
 const systemPrompt = [
   "You are MacDonald Automation's assistant.",
@@ -61,17 +64,15 @@ export default async function handler(req: Req, res: Res) {
 
   try {
     const payload = {
-      model: 'gpt-4.1-mini',
-      input: [
-        { role: 'system', content: [{ type: 'text', text: SYSTEM_PROMPT }] },
-        ...normalizedMessages.map((msg) => ({
-          role: msg.role,
-          content: [{ type: 'text', text: msg.content }],
-        })),
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...normalizedMessages.map((msg) => ({ role: msg.role, content: msg.content })),
       ],
+      temperature: 0.4,
     }
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +87,7 @@ export default async function handler(req: Req, res: Res) {
       return res.status(response.status).json({ error: errorMessage })
     }
 
-    const assistantText = extractText(data)
+    const assistantText = extractChatText(data)
     if (!assistantText) return res.status(500).json({ error: 'Empty response from model' })
 
     return res.status(200).json({ message: assistantText })
@@ -101,25 +102,12 @@ function normalizeRole(role: any) {
   return null
 }
 
-function extractText(data: any) {
+function extractChatText(data: any) {
   try {
-    const outputs = data?.output ?? data?.outputs ?? []
-    for (const item of outputs) {
-      const content = item?.content
-      if (Array.isArray(content)) {
-        for (const block of content) {
-          if (block?.type === 'output_text' && typeof block?.text === 'string' && block.text.trim()) {
-            return block.text.trim()
-          }
-        }
-      }
-      if (typeof item?.output_text === 'string' && item.output_text.trim()) {
-        return item.output_text.trim()
-      }
-    }
+    const text = data?.choices?.[0]?.message?.content
+    if (typeof text === 'string' && text.trim()) return text.trim()
   } catch (err) {
-    console.error('assist extractText error', err)
+    console.error('assist extractChatText error', err)
   }
-  if (typeof data?.output_text === 'string' && data.output_text.trim()) return data.output_text.trim()
   return null
 }
