@@ -2,15 +2,23 @@
 // POST /api/assist with JSON: { messages: [{ role: 'user' | 'assistant', content: string }] }
 // Environment variable: OPENAI_API_KEY (stored securely on Vercel; never exposed client-side).
 
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; end: () => void }
 
-const SYSTEM_PROMPT = [
+const servicesCatalog = readFileSync(join(process.cwd(), 'src/lib/services.md'), 'utf8')
+
+const systemPrompt = [
   "You are MacDonald Automation's assistant.",
   "Answer only questions related to the company's automation services.",
   "Politely refuse anything unrelated.",
   "Format every reply in Markdown so it is easy to read (use headings, bullet lists, and code blocks when helpful).",
+  "Reference the detailed services catalog below when answering:",
 ].join(' ')
+
+const SYSTEM_PROMPT = `${systemPrompt}\n\n${servicesCatalog}`
 
 export default async function handler(req: Req, res: Res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
