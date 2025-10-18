@@ -1,22 +1,21 @@
-import { Link } from 'react-router-dom'
-import { CALENDLY_URL } from '../lib/calendly'
+type Props = {
+  hideWhenNearBottom: boolean
+}
 
-export default function MobileCTA() {
+export default function MobileCTA({ hideWhenNearBottom }: Props) {
+  if (hideWhenNearBottom) {
+    return <div className="md:hidden" aria-hidden="true" />
+  }
+
   return (
-    <div className="fixed inset-x-0 bottom-0 px-4 md:hidden pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-md mb-3 rounded-xl bg-white/5 backdrop-blur border border-white/10 shadow-lg">
-        <div className="p-3 flex items-center gap-2">
-          <a
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 text-center rounded-md bg-[--color-brand-red] text-black font-semibold py-2"
-          >
-            Book
-          </a>
-          <Link to="/quote" className="flex-1 text-center rounded-md border border-white/10 py-2 text-white">Quote</Link>
-        </div>
-      </div>
+    <div className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] right-5 md:hidden">
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event('open-assistant-chat'))}
+        className="pointer-events-auto rounded-full bg-[--color-brand-red] px-6 py-3 text-xs font-semibold uppercase tracking-wide text-black shadow-lg shadow-black/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[--color-brand-red]/80 hover:scale-105 active:scale-95 sm:text-sm"
+      >
+        AI Chatbot
+      </button>
     </div>
   )
 }

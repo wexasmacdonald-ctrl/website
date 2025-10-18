@@ -19,6 +19,16 @@ export default function AssistantChat() {
     return () => clearTimeout(timer)
   }, [messages, isOpen])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleOpen = () => {
+      setIsOpen(true)
+      setError(null)
+    }
+    window.addEventListener('open-assistant-chat', handleOpen)
+    return () => window.removeEventListener('open-assistant-chat', handleOpen)
+  }, [])
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const trimmed = input.trim()
@@ -57,7 +67,7 @@ export default function AssistantChat() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-5 right-5 z-40 rounded-full bg-[--color-brand-red] px-4 py-2 text-sm font-semibold text-black shadow-lg shadow-black/30 transition hover:scale-105"
+          className="fixed bottom-5 right-5 z-40 hidden rounded-full bg-[--color-brand-red] px-4 py-2 text-sm font-semibold text-black shadow-lg shadow-black/30 transition hover:scale-105 md:inline-flex md:items-center md:justify-center"
         >
           Ask MacDonald AI
         </button>
@@ -68,7 +78,7 @@ export default function AssistantChat() {
           <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-white">MacDonald AI Assistant</p>
-              <p className="text-xs text-white/60">Ask about automation services</p>
+              <p className="text-xs text-white/60">Your automation concierge</p>
             </div>
             <button
               type="button"
@@ -85,7 +95,7 @@ export default function AssistantChat() {
           <div ref={scrollRef} className="max-h-72 overflow-y-auto px-4 py-3 space-y-3 text-sm text-white/90">
             {messages.length === 0 && (
               <p className="rounded-lg bg-white/5 px-3 py-2 text-white/70">
-                Hi there! Ask me anything about MacDonald Automation&rsquo;s services.
+                How can I help with your automation needs?
               </p>
             )}
             {messages.map((msg, idx) => (

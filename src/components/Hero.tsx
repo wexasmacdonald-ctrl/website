@@ -1,6 +1,4 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { CALENDLY_URL } from '../lib/calendly'
 
 export default function Hero() {
   return (
@@ -27,27 +25,6 @@ export default function Hero() {
         >
           We build powerful automations that do the boring work for you — data entry, client follow-ups, reports, websites, and more — while you focus on the stuff that actually makes money.
         </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mt-8 flex flex-wrap justify-center items-center gap-3"
-        >
-          <a
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="px-5 py-3 rounded-md bg-[--color-brand-red] text-black font-semibold hover:opacity-90 shadow-sm"
-          >
-            Book a Call
-          </a>
-          <Link
-            to="/quote"
-            className="px-5 py-3 rounded-md border border-white/20 hover:border-white/40 text-white"
-          >
-            Get a Quote
-          </Link>
-        </motion.div>
       </div>
     </section>
   )

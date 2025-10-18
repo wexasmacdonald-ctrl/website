@@ -76,9 +76,8 @@ export default function Contact() {
             disabled={status === 'sending'}
             className="px-5 py-2.5 rounded-md bg-[--color-brand-red] text-black font-semibold disabled:opacity-60"
           >
-            {status === 'sending' ? 'Sending…' : 'Submit'}
+            {status === 'sending' ? 'Sending...' : 'Submit'}
           </button>
-          <a href="tel:+18195767856" className="text-white/80 hover:text-white">or call +1 (819) 576‑7856</a>
         </div>
         {status === 'success' && (
           <p className="text-sm text-emerald-400">Thanks — we received your request. We’ll reply shortly.</p>
