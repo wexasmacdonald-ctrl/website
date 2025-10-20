@@ -133,7 +133,7 @@ export default function AssistantChat() {
                   <div ref={scrollRef} className="max-h-[55vh] overflow-y-auto px-5 py-4 space-y-3 text-sm text-white/90">
                     {messages.length === 0 && (
                       <p className="rounded-lg bg-white/5 px-3 py-2 text-white/70">
-                        How can I help with your automation needs?
+                        How can I help today?
                       </p>
                     )}
                     {messages.map((msg, idx) => (
@@ -208,7 +208,7 @@ export default function AssistantChat() {
               <div ref={scrollRef} className="max-h-72 overflow-y-auto px-4 py-3 space-y-3 text-sm text-white/90">
                 {messages.length === 0 && (
                   <p className="rounded-lg bg-white/5 px-3 py-2 text-white/70">
-                    How can I help with your automation needs?
+                    How can I help today?
                   </p>
                 )}
                 {messages.map((msg, idx) => (
