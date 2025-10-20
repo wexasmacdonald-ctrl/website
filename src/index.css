@@ -14,7 +14,6 @@ body {
 html, body {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
 }
 
 /* Theme tokens as CSS variables */

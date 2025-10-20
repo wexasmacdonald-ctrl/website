@@ -28,9 +28,9 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-black/70 backdrop-blur border-b border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-6 relative">
-        <Link to="/" className="group">
-          <Logo className="[&>div>span:last-child]:group-hover:w-4/5" />
+      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3 md:gap-6 relative">
+        <Link to="/" className="group flex-1 min-w-0 md:flex-none">
+          <Logo className="block w-full max-w-none [&>div>span:last-child]:group-hover:w-4/5" />
         </Link>
         <nav className="ml-auto hidden md:flex items-center gap-6">
           {nav.map((n) => (
