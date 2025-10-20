@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, FormEvent } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import type { FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 type Message = { role: 'user' | 'assistant'; content: string }
@@ -24,25 +25,17 @@ export default function AssistantChat() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const mql = window.matchMedia('(max-width: 767px)')
-    const setMatch = (mq: MediaQueryList | MediaQueryListEvent) => setIsMobile('matches' in mq ? mq.matches : mql.matches)
-    setMatch(mql)
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches)
 
-    const listener = (event: MediaQueryListEvent) => setMatch(event)
+    setIsMobile(mql.matches)
+
     if (typeof mql.addEventListener === 'function') {
-      mql.addEventListener('change', listener)
-    } else {
-      // @ts-expect-error addListener is deprecated but still needed for Safari
-      mql.addListener(listener)
+      mql.addEventListener('change', handleChange)
+      return () => mql.removeEventListener('change', handleChange)
     }
 
-    return () => {
-      if (typeof mql.removeEventListener === 'function') {
-        mql.removeEventListener('change', listener)
-      } else {
-        // @ts-expect-error removeListener is deprecated but still needed for Safari
-        mql.removeListener(listener)
-      }
-    }
+    mql.addListener(handleChange)
+    return () => mql.removeListener(handleChange)
   }, [])
 
   useEffect(() => {
