@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState, type CSSProperties, type HTMLAttributes } from 'react'
-
 type Props = {
   className?: string
   forceExpanded?: boolean
@@ -7,140 +5,95 @@ type Props = {
   showUnderline?: boolean
 }
 
-type LetterEntry = {
-  char: string
-  finalColor: 'white' | 'red'
-  key: string
-}
+const letters = [
+  { char: '<', finalColor: 'white' as const },
+  ...'MACDONALD'.split('').map((char) => ({ char, finalColor: 'white' as const })),
+  { char: ' ', finalColor: 'white' as const },
+  ...'AI'.split('').map((char) => ({ char, finalColor: 'red' as const })),
+  { char: '>', finalColor: 'white' as const },
+]
 
-type LetterStyle = CSSProperties & {
-  '--logo-final-color'?: string
-}
-
-const LETTER_DELAY_MS = 65
+const LETTER_DELAY_MS = 55
 
 export default function Logo({ className, forceExpanded = false, textClassName, showUnderline = true }: Props) {
-  const [activeState, setActiveState] = useState(forceExpanded)
-  const [hasInteracted, setHasInteracted] = useState(forceExpanded)
+  const sizeClasses =
+    textClassName ??
+    'text-[clamp(1rem,4.5vw,1.6rem)] sm:text-[clamp(1.15rem,4vw,1.85rem)] md:text-[2rem] lg:text-[2.45rem]'
 
-  useEffect(() => {
+  const baseTextClasses = `grid w-fit font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
+
+  const collapsedClasses = [
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-250 ease-in-out',
+    forceExpanded
+      ? 'opacity-0 pointer-events-none'
+      : 'opacity-100 translate-x-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:translate-x-4 group-focus-visible:translate-x-4',
+  ].join(' ')
+
+  function renderLetter(char: string, index: number, finalColor: 'white' | 'red') {
     if (forceExpanded) {
-      setActiveState(true)
-      setHasInteracted(true)
+      return (
+        <span
+          key={`${char}-${index}`}
+          className={`inline-block transform-gpu ${
+            finalColor === 'red' ? 'text-[--color-brand-red]' : 'text-white'
+          }`}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      )
     }
-  }, [forceExpanded])
 
-  const letters = useMemo<LetterEntry[]>(() => {
-    const base: LetterEntry[] = [{ char: '<', finalColor: 'white', key: 'open-angle' }]
-    'MACDONALD'.split('').forEach((char, index) => {
-      base.push({ char, finalColor: 'white', key: `mac-${index}` })
-    })
-    base.push({ char: ' ', finalColor: 'white', key: 'space' })
-    'AI'.split('').forEach((char, index) => {
-      base.push({ char, finalColor: 'red', key: `ai-${index}` })
-    })
-    base.push({ char: '>', finalColor: 'white', key: 'close-angle' })
-    return base
-  }, [])
+    const appearDelay = index * LETTER_DELAY_MS
+    const colorDelay = finalColor === 'red' ? appearDelay : appearDelay + 140
 
-  const totalLetters = letters.length
-  const isActive = forceExpanded || activeState
-  const baseReturnDelay = totalLetters * LETTER_DELAY_MS + 160
+    const transitions = [
+      `opacity 220ms ease ${appearDelay}ms`,
+      `transform 220ms ease ${appearDelay}ms`,
+      `filter 220ms ease ${appearDelay}ms`,
+      `color 160ms ease ${colorDelay}ms`,
+    ].join(', ')
 
-  function handleActivate() {
-    if (forceExpanded) return
-    setHasInteracted(true)
-    setActiveState(true)
+    const baseClasses = [
+      'inline-block transform-gpu text-[--color-brand-red] opacity-0 translate-x-3 blur-[3px]',
+      'group-hover:opacity-100 group-focus-visible:opacity-100',
+      'group-hover:translate-x-0 group-focus-visible:translate-x-0',
+      'group-hover:blur-0 group-focus-visible:blur-0',
+      finalColor === 'white' ? 'group-hover:text-white group-focus-visible:text-white' : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+
+    return (
+      <span key={`${char}-${index}`} className={baseClasses} style={{ transition: transitions }}>
+        {char === ' ' ? '\u00A0' : char}
+      </span>
+    )
   }
 
-  function handleDeactivate() {
-    if (forceExpanded) return
-    setActiveState(false)
-  }
-
-  function getLetterStyle(entry: LetterEntry, index: number): LetterStyle {
-    const finalColor = entry.finalColor === 'red' ? 'var(--color-brand-red)' : '#ffffff'
-
-    if (forceExpanded) {
-      return {
-        color: finalColor,
-      }
-    }
-
-    if (!hasInteracted && !isActive) {
-      return {
-        color: 'var(--color-brand-red)',
-        opacity: 0,
-        transform: 'translateX(-0.5rem)',
-      }
-    }
-
-    const delay = (isActive ? index + 1 : totalLetters - index) * LETTER_DELAY_MS
-
-    const style: LetterStyle = {
-      '--logo-final-color': finalColor,
-      animation: `${isActive ? 'logo-letter-in' : 'logo-letter-out'} 0.42s ease-in-out forwards`,
-      animationDelay: `${delay}ms`,
-    }
-
-    return style
-  }
-
-  const collapsedStyle: CSSProperties | undefined = forceExpanded
-    ? { display: 'none' }
-    : {
-        animation: `${isActive ? 'logo-mark-out' : 'logo-mark-in'} 0.34s ease-in-out forwards`,
-        animationDelay: isActive ? '0ms' : `${baseReturnDelay}ms`,
-      }
-
-  const baseTextClasses = [
-    'grid w-fit font-extrabold leading-none tracking-[0.02em]',
-    'text-[clamp(1rem,4.6vw,1.6rem)] sm:text-[clamp(1.15rem,4.2vw,1.9rem)] md:text-[2.1rem] lg:text-[2.5rem]',
-    textClassName,
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  const interactiveHandlers: Partial<HTMLAttributes<HTMLDivElement>> = forceExpanded
-    ? {}
-    : {
-        onMouseEnter: handleActivate,
-        onMouseLeave: handleDeactivate,
-        onFocusCapture: handleActivate,
-        onBlurCapture: handleDeactivate,
-      }
+  const underlineClasses = [
+    'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-300',
+    forceExpanded ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100',
+  ].join(' ')
 
   return (
     <div className={className}>
-      <div className="relative block w-full select-none" aria-hidden="true" {...interactiveHandlers}>
+      <div
+        className={`relative block w-full select-none ${forceExpanded ? '' : 'group'}`}
+        aria-hidden="true"
+      >
         <span className={baseTextClasses}>
           {!forceExpanded && (
-            <span className="col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap" style={collapsedStyle}>
+            <span className={collapsedClasses}>
               {'<'}
               <span className="text-[--color-brand-red]">M</span>
               {'>'}
             </span>
           )}
           <span className="col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap">
-            {letters.map((entry, index) => (
-              <span
-                key={entry.key}
-                className="relative inline-block will-change-transform"
-                style={getLetterStyle(entry, index)}
-              >
-                {entry.char === ' ' ? '\u00A0' : entry.char}
-              </span>
-            ))}
+            {letters.map((letter, index) => renderLetter(letter.char, index, letter.finalColor))}
           </span>
         </span>
-        {showUnderline && (
-          <span
-            className={[
-              'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-300',
-              isActive ? 'scale-x-100' : 'scale-x-0',
-            ].join(' ')}
-          />
-        )}
+        {showUnderline && <span className={underlineClasses} />}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>
