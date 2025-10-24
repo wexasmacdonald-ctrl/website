@@ -23,10 +23,10 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const baseTextClasses = `grid w-fit font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
 
   const collapsedClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-250 ease-in-out',
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-240 ease-in-out',
     forceExpanded
       ? 'opacity-0 pointer-events-none'
-      : 'opacity-100 translate-x-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:translate-x-4 group-focus-visible:translate-x-4',
+      : 'opacity-100 translate-x-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:-translate-x-4 group-focus-visible:-translate-x-4',
   ].join(' ')
 
   function renderLetter(char: string, index: number, finalColor: 'white' | 'red') {
@@ -54,7 +54,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     ].join(', ')
 
     const baseClasses = [
-      'inline-block transform-gpu text-[--color-brand-red] opacity-0 translate-x-3 blur-[3px]',
+      'inline-block transform-gpu text-[--color-brand-red] opacity-0 -translate-x-3 blur-[3px]',
       'group-hover:opacity-100 group-focus-visible:opacity-100',
       'group-hover:translate-x-0 group-focus-visible:translate-x-0',
       'group-hover:blur-0 group-focus-visible:blur-0',
