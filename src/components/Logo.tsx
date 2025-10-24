@@ -16,7 +16,6 @@ const LETTER_FINAL_COLOR = LETTERS.map((_, idx) => (idx >= LETTERS.length - 2 ? 
 const DYNAMIC_LETTER_COUNT = Math.max(LETTERS.length - MIN_VISIBLE_LETTERS, 1)
 const OPEN_STEP_DELAY_MS = OPEN_TOTAL_MS / DYNAMIC_LETTER_COUNT
 const CLOSE_STEP_DELAY_MS = CLOSE_TOTAL_MS / DYNAMIC_LETTER_COUNT
-const CARET_BITE_DURATION_MS = 160
 const SCROLL_CLOSE_THRESHOLD = 28
 
 function createVisibilityArray(expanded: boolean) {
@@ -34,7 +33,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const timersRef = useRef<number[]>([])
   const hasInteractedRef = useRef(forceExpanded)
   const lastScrollYRef = useRef(0)
-  const [caretChar, setCaretChar] = useState<'-' | '>'>('>')
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -60,7 +58,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     ensureBaseLetterVisible()
     clearTimers()
     hasInteractedRef.current = true
-    setCaretChar('>')
 
     LETTERS.forEach((_, idx) => {
       if (idx < MIN_VISIBLE_LETTERS) return
@@ -91,11 +88,9 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const closeLetters = useCallback(() => {
     ensureBaseLetterVisible()
     clearTimers()
-    setCaretChar('>')
     if (!hasInteractedRef.current) {
       setVisibleLetters(createVisibilityArray(false))
       setLetterSettled(createSettledArray(false))
-      setCaretChar('>')
       return
     }
 
@@ -117,16 +112,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
           return
         }
 
-        setCaretChar('-')
-        const biteResetDelay = Math.min(
-          CARET_BITE_DURATION_MS,
-          Math.max(CLOSE_STEP_DELAY_MS * 0.8, 45),
-        )
-        const revertTimeout = window.setTimeout(() => {
-          setCaretChar('>')
-        }, biteResetDelay)
-        timersRef.current.push(revertTimeout)
-
         setLetterSettled((prev) => {
           if (!prev[idx]) return prev
           const next = [...prev]
@@ -137,11 +122,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
       timersRef.current.push(hideTimeout)
     })
-
-    const finalResetTimeout = window.setTimeout(() => {
-      setCaretChar('>')
-    }, CLOSE_TOTAL_MS + CARET_BITE_DURATION_MS)
-    timersRef.current.push(finalResetTimeout)
   }, [clearTimers, ensureBaseLetterVisible])
 
   useEffect(() => {
@@ -156,7 +136,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
       setHovered(true)
       setVisibleLetters(createVisibilityArray(true))
       setLetterSettled(createSettledArray(true))
-      setCaretChar('>')
       return
     }
 
@@ -164,7 +143,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     hasInteractedRef.current = false
     setVisibleLetters(createVisibilityArray(false))
     setLetterSettled(createSettledArray(false))
-    setCaretChar('>')
   }, [forceExpanded, clearTimers])
 
   useEffect(() => {
@@ -218,7 +196,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
         onTouchStart: () => setHovered(true),
       }
 
-  const caretDisplay = forceExpanded ? '>' : caretChar
   const collapsedOnly = !forceExpanded && visibleLetters.slice(1).every((vis) => !vis)
 
   return (
@@ -254,7 +231,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
               </span>
             )
           })}
-          <span className="text-white ml-[0.08em]">{caretDisplay}</span>
+          <span className="text-white ml-[0.08em]">{'>'}</span>
         </span>
         {showUnderline && <span className={underlineClasses} />}
       </div>
