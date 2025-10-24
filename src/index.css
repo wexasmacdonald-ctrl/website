@@ -59,3 +59,68 @@ html, body {
 .assistant-markdown pre {
   @apply overflow-x-auto rounded-md bg-white/10 p-3 text-[0.85em];
 }
+
+@keyframes logo-letter-in {
+  0% {
+    opacity: 0;
+    transform: translateX(0.5rem);
+    filter: blur(8px);
+    color: var(--color-brand-red);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+    color: var(--color-brand-red);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+    color: var(--logo-final-color, #ffffff);
+  }
+}
+
+@keyframes logo-letter-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+    color: var(--logo-final-color, #ffffff);
+  }
+  50% {
+    color: var(--color-brand-red);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-0.5rem);
+    filter: blur(8px);
+    color: var(--color-brand-red);
+  }
+}
+
+@keyframes logo-mark-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-0.4rem);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes logo-mark-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0.4rem);
+    filter: blur(6px);
+  }
+}
