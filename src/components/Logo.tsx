@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 type Props = {
   className?: string
@@ -7,219 +7,164 @@ type Props = {
   showUnderline?: boolean
 }
 
-type LetterSpec = {
-  char: string
-  finalColor: 'white' | 'red'
+const LETTERS = 'MACDONALD AI'.split('')
+const MIN_VISIBLE_LETTERS = 1
+const OPEN_TOTAL_MS = 700
+const CLOSE_TOTAL_MS = 1500
+const COLOR_SETTLE_DELAY_MS = 220
+const LETTER_FINAL_COLOR = LETTERS.map((_, idx) => (idx >= LETTERS.length - 2 ? 'red' : 'white'))
+const DYNAMIC_LETTER_COUNT = Math.max(LETTERS.length - MIN_VISIBLE_LETTERS, 1)
+const OPEN_STEP_DELAY_MS = OPEN_TOTAL_MS / DYNAMIC_LETTER_COUNT
+const CLOSE_STEP_DELAY_MS = CLOSE_TOTAL_MS / DYNAMIC_LETTER_COUNT
+
+function createVisibilityArray(expanded: boolean) {
+  return LETTERS.map((_, idx) => (expanded ? true : idx < MIN_VISIBLE_LETTERS))
 }
 
-const LETTERS: LetterSpec[] = [
-  { char: '<', finalColor: 'white' },
-  ...'MACDONALD'.split('').map<LetterSpec>((char) => ({ char, finalColor: 'white' })),
-  { char: ' ', finalColor: 'white' },
-  ...'AI'.split('').map<LetterSpec>((char) => ({ char, finalColor: 'red' })),
-  { char: '>', finalColor: 'white' },
-]
-
-const LETTER_DELAY_MS = 55
-const COLOR_DELAY_MS = 140
-const M_LETTER_INDEX = LETTERS.findIndex((letter) => letter.char === 'M')
-const CLOSING_TARGET_INDEX = M_LETTER_INDEX === -1 ? 1 : M_LETTER_INDEX
-const DEFAULT_CARET_DURATION_MS = 220
+function createSettledArray(expanded: boolean) {
+  return LETTERS.map((_, idx) => (expanded ? true : idx < MIN_VISIBLE_LETTERS))
+}
 
 export default function Logo({ className, forceExpanded = false, textClassName, showUnderline = true }: Props) {
-  const totalLetters = LETTERS.length
-  const closingIndex = totalLetters - 1
   const [hovered, setHovered] = useState(forceExpanded)
-  const [visible, setVisible] = useState<boolean[]>(() => Array(totalLetters).fill(forceExpanded))
-  const [finalColorApplied, setFinalColorApplied] = useState<boolean[]>(() =>
-    LETTERS.map((letter) => (forceExpanded ? letter.finalColor === 'red' ? false : true : false)),
-  )
+  const [visibleLetters, setVisibleLetters] = useState<boolean[]>(() => createVisibilityArray(forceExpanded))
+  const [letterSettled, setLetterSettled] = useState<boolean[]>(() => createSettledArray(forceExpanded))
   const timersRef = useRef<number[]>([])
-  const lettersRef = useRef<(HTMLSpanElement | null)[]>([])
-  const caretOffsetRef = useRef(0)
-  const [caretOffset, setCaretOffset] = useState(0)
-  const [caretTransitionMs, setCaretTransitionMs] = useState(DEFAULT_CARET_DURATION_MS)
-  const [hasOpened, setHasOpened] = useState(forceExpanded)
-  const updateCaretOffset = useCallback((value: number) => {
-    caretOffsetRef.current = value
-    setCaretOffset(value)
+  const hasInteractedRef = useRef(forceExpanded)
+
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach((id) => window.clearTimeout(id))
+    timersRef.current = []
   }, [])
-  const computeCaretOffset = useCallback(
-    (letterIndex: number) => {
-      const caretEl = lettersRef.current[closingIndex]
-      const targetEl = lettersRef.current[letterIndex]
-      if (!caretEl || !targetEl) {
-        return caretOffsetRef.current
-      }
 
-      const caretRect = caretEl.getBoundingClientRect()
-      const targetRect = targetEl.getBoundingClientRect()
-      const caretRight = caretRect.left + caretRect.width
-      const targetRight = targetRect.left + targetRect.width
+  const ensureBaseLetterVisible = useCallback(() => {
+    setVisibleLetters((prev) => {
+      if (prev[0]) return prev
+      const next = [...prev]
+      next[0] = true
+      return next
+    })
+    setLetterSettled((prev) => {
+      if (prev[0]) return prev
+      const next = [...prev]
+      next[0] = true
+      return next
+    })
+  }, [])
 
-      return targetRight - caretRight
-    },
-    [closingIndex],
-  )
+  const openLetters = useCallback(() => {
+    ensureBaseLetterVisible()
+    clearTimers()
+    hasInteractedRef.current = true
+
+    LETTERS.forEach((_, idx) => {
+      if (idx < MIN_VISIBLE_LETTERS) return
+      const delay = (idx - (MIN_VISIBLE_LETTERS - 1)) * OPEN_STEP_DELAY_MS
+      const revealTimeout = window.setTimeout(() => {
+        setVisibleLetters((prev) => {
+          if (prev[idx]) return prev
+          const next = [...prev]
+          next[idx] = true
+          return next
+        })
+
+        const colorTimeout = window.setTimeout(() => {
+          setLetterSettled((prev) => {
+            if (prev[idx]) return prev
+            const next = [...prev]
+            next[idx] = true
+            return next
+          })
+        }, COLOR_SETTLE_DELAY_MS)
+        timersRef.current.push(colorTimeout)
+      }, delay)
+
+      timersRef.current.push(revealTimeout)
+    })
+  }, [clearTimers, ensureBaseLetterVisible])
+
+  const closeLetters = useCallback(() => {
+    ensureBaseLetterVisible()
+    clearTimers()
+    if (!hasInteractedRef.current) {
+      setVisibleLetters(createVisibilityArray(false))
+      setLetterSettled(createSettledArray(false))
+      return
+    }
+
+    LETTERS.slice().reverse().forEach((_, reverseIdx) => {
+      const idx = LETTERS.length - 1 - reverseIdx
+      if (idx < MIN_VISIBLE_LETTERS) return
+      const delay = reverseIdx * CLOSE_STEP_DELAY_MS
+
+      const hideTimeout = window.setTimeout(() => {
+        setVisibleLetters((prev) => {
+          if (!prev[idx]) return prev
+          const next = [...prev]
+          next[idx] = false
+          return next
+        })
+        setLetterSettled((prev) => {
+          if (!prev[idx]) return prev
+          const next = [...prev]
+          next[idx] = false
+          return next
+        })
+      }, delay)
+
+      timersRef.current.push(hideTimeout)
+    })
+  }, [clearTimers, ensureBaseLetterVisible])
 
   useEffect(() => {
     return () => {
       clearTimers()
     }
-  }, [])
+  }, [clearTimers])
 
   useEffect(() => {
     clearTimers()
     if (forceExpanded) {
       setHovered(true)
-      setVisible(Array(totalLetters).fill(true))
-      setFinalColorApplied(LETTERS.map((letter) => letter.finalColor === 'red' ? false : true))
-      updateCaretOffset(0)
-      setCaretTransitionMs(DEFAULT_CARET_DURATION_MS)
-      setHasOpened(true)
+      setVisibleLetters(createVisibilityArray(true))
+      setLetterSettled(createSettledArray(true))
+      return
+    }
+
+    setHovered(false)
+    hasInteractedRef.current = false
+    setVisibleLetters(createVisibilityArray(false))
+    setLetterSettled(createSettledArray(false))
+  }, [forceExpanded, clearTimers])
+
+  useEffect(() => {
+    if (forceExpanded) return
+    if (hovered) {
+      openLetters()
     } else {
+      closeLetters()
+    }
+
+    return clearTimers
+  }, [hovered, forceExpanded, openLetters, closeLetters, clearTimers])
+
+  useEffect(() => {
+    if (forceExpanded) return
+    const handleScroll = () => {
       setHovered(false)
-      setVisible(Array(totalLetters).fill(false))
-      setFinalColorApplied(Array(totalLetters).fill(false))
-      updateCaretOffset(0)
-      setCaretTransitionMs(DEFAULT_CARET_DURATION_MS)
-      setHasOpened(false)
-    }
-  }, [forceExpanded, totalLetters, updateCaretOffset])
-
-  useEffect(() => {
-    if (forceExpanded) return
-    if (hovered) {
-      setHasOpened(true)
-    }
-  }, [hovered, forceExpanded])
-
-  useEffect(() => {
-    if (forceExpanded) return
-    clearTimers()
-
-    if (hovered) {
-      updateCaretOffset(0)
-      setCaretTransitionMs(DEFAULT_CARET_DURATION_MS)
-      setVisible(Array(totalLetters).fill(false))
-      setFinalColorApplied(Array(totalLetters).fill(false))
-      const revealOrder = [
-        0,
-        closingIndex,
-        ...Array.from({ length: totalLetters - 2 }, (_, idx) => idx + 1),
-      ]
-
-      revealOrder.forEach((letterIndex, step) => {
-        const delay = step * LETTER_DELAY_MS
-        const timeout = window.setTimeout(() => {
-          setVisible((prev) => {
-            if (prev[letterIndex]) return prev
-            const next = [...prev]
-            next[letterIndex] = true
-            return next
-          })
-
-          const letter = LETTERS[letterIndex]
-          if (letter.finalColor === 'white') {
-            const colorTimeout = window.setTimeout(() => {
-              setFinalColorApplied((prev) => {
-                if (prev[letterIndex]) return prev
-                const next = [...prev]
-                next[letterIndex] = true
-                return next
-              })
-            }, COLOR_DELAY_MS)
-            timersRef.current.push(colorTimeout)
-          }
-        }, delay)
-        timersRef.current.push(timeout)
-      })
-    } else {
-      if (!hasOpened) return
-      const hideOrder = [
-        ...Array.from({ length: totalLetters - 1 }, (_, idx) => totalLetters - 2 - idx),
-        closingIndex,
-      ]
-
-      const caretTargetOffset = computeCaretOffset(CLOSING_TARGET_INDEX)
-      const closingLetters = hideOrder.filter((letterIndex) => letterIndex >= CLOSING_TARGET_INDEX && letterIndex !== closingIndex)
-      const caretDistance = Math.abs(caretTargetOffset)
-      const closingDuration = Math.min(Math.max(Math.round((caretDistance || 60) * 6), 420), 900)
-      const letterOffsets = new Map<number, number>()
-      const closingLetterOrder = new Map<number, number>()
-
-      closingLetters.forEach((letterIndex, idx) => {
-        letterOffsets.set(letterIndex, computeCaretOffset(letterIndex))
-        closingLetterOrder.set(letterIndex, idx)
-      })
-
-      setCaretTransitionMs(closingDuration)
-      updateCaretOffset(caretTargetOffset)
-
-      let trailingDelayCursor = 0
-      let lastClosingDelay = 0
-
-      hideOrder.forEach((letterIndex, step) => {
-        let delay: number
-        if (letterIndex >= CLOSING_TARGET_INDEX && letterIndex !== closingIndex) {
-          if (closingLetters.length === 0) {
-            delay = step * LETTER_DELAY_MS
-          } else {
-            const offsetForLetter = Math.abs(letterOffsets.get(letterIndex) ?? caretTargetOffset)
-            const ratioBase = caretDistance > 1 ? caretDistance : closingLetters.length + 1
-            const sequenceIndex = closingLetterOrder.get(letterIndex) ?? 0
-            const ratio =
-              caretDistance > 1
-                ? offsetForLetter / ratioBase
-                : (sequenceIndex + 1) / ratioBase
-            delay = Math.max(lastClosingDelay, ratio * closingDuration)
-            lastClosingDelay = delay
-          }
-        } else if (letterIndex === closingIndex) {
-          delay = closingDuration + 120
-        } else {
-          trailingDelayCursor += 1
-          delay = closingDuration + trailingDelayCursor * LETTER_DELAY_MS
-        }
-
-        const timeout = window.setTimeout(() => {
-          setVisible((prev) => {
-            if (!prev[letterIndex]) return prev
-            const next = [...prev]
-            next[letterIndex] = false
-            return next
-          })
-          const letter = LETTERS[letterIndex]
-          if (letter.finalColor === 'white') {
-            setFinalColorApplied((prev) => {
-              if (!prev[letterIndex]) return prev
-              const next = [...prev]
-              next[letterIndex] = false
-              return next
-            })
-          }
-        }, delay)
-        timersRef.current.push(timeout)
-      })
     }
 
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
-      clearTimers()
+      window.removeEventListener('scroll', handleScroll)
     }
-  }, [hovered, forceExpanded, totalLetters, hasOpened, closingIndex, computeCaretOffset, updateCaretOffset])
+  }, [forceExpanded])
 
   const sizeClasses =
     textClassName ??
     'text-[clamp(0.95rem,4.2vw,1.5rem)] sm:text-[clamp(1.1rem,3.8vw,1.8rem)] md:text-[2rem] lg:text-[2.45rem]'
 
-  const baseTextClasses = `grid w-fit font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
-
-  const collapsedClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-220 ease-in-out',
-    forceExpanded
-      ? 'opacity-0 pointer-events-none'
-      : 'opacity-100 translate-x-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:-translate-x-4 group-focus-visible:-translate-x-4',
-  ].join(' ')
+  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
 
   const underlineClasses = [
     'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250',
@@ -233,70 +178,44 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
         onMouseLeave: () => setHovered(false),
         onFocusCapture: () => setHovered(true),
         onBlurCapture: () => setHovered(false),
+        onTouchStart: () => setHovered(true),
+        onTouchEnd: () => setHovered(false),
       }
 
   return (
     <div className={className}>
       <div className={`relative block w-full select-none ${forceExpanded ? '' : 'group'}`} aria-hidden="true" {...handlers}>
         <span className={baseTextClasses}>
-          {!forceExpanded && (
-            <span className={collapsedClasses}>
-              {'<'}
-              <span className="text-[--color-brand-red]">M</span>
-              {'>'}
-            </span>
-          )}
-          <span className="col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap">
-            {LETTERS.map((letter, index) => {
-              const isVisible = forceExpanded || visible[index]
-              const shouldBeWhite = forceExpanded
-                ? letter.finalColor === 'white'
-                : letter.finalColor === 'white' && finalColorApplied[index]
-              const colorClass =
-                letter.finalColor === 'red'
+          <span className="text-white">{'<'}</span>
+          {LETTERS.map((letter, index) => {
+            const isVisible = forceExpanded || visibleLetters[index]
+            const isSettled = forceExpanded || letterSettled[index]
+            const finalColor = LETTER_FINAL_COLOR[index]
+            const wrapperClasses = [
+              'inline-flex min-w-0 overflow-hidden transition-[max-width,opacity] duration-220 ease-out',
+              isVisible ? 'max-w-[2ch] opacity-100' : 'max-w-0 opacity-0',
+            ].join(' ')
+            const innerClasses = [
+              'inline-block transform-gpu transition-[transform,color] duration-220 ease-out',
+              isVisible ? 'translate-x-0' : '-translate-x-1',
+              !isSettled
+                ? 'text-[--color-brand-red]'
+                : finalColor === 'red'
                   ? 'text-[--color-brand-red]'
-                  : shouldBeWhite
-                    ? 'text-white'
-                    : 'text-[--color-brand-red]'
+                  : 'text-white',
+            ].join(' ')
 
-              const motionClass = isVisible
-                ? 'opacity-100 blur-0'
-                : 'opacity-0 blur-[3px]'
-              const durationClass =
-                !forceExpanded && index === closingIndex ? 'duration-300 ease-out' : 'duration-180 ease-in-out'
-              const baseTranslate = isVisible ? 0 : -12
-              const caretTranslate = !forceExpanded && index === closingIndex ? caretOffset : 0
-              const letterStyle: CSSProperties = {
-                transform: `translateX(${baseTranslate + caretTranslate}px)`,
-              }
-              if (!forceExpanded && index === closingIndex) {
-                letterStyle.transitionDuration = `${caretTransitionMs}ms`
-                letterStyle.transitionTimingFunction = 'cubic-bezier(0.16, 1, 0.3, 1)'
-              }
-
-              return (
-                <span
-                  key={`${letter.char}-${index}`}
-                  ref={(el) => {
-                    lettersRef.current[index] = el
-                  }}
-                  className={`inline-block transform-gpu will-change-transform transition-[opacity,filter,transform] ${durationClass} ${colorClass} ${motionClass}`}
-                  style={letterStyle}
-                >
-                  {letter.char === ' ' ? '\u00A0' : letter.char}
-                </span>
-              )
-            })}
-          </span>
+            return (
+              <span key={`${letter}-${index}`} className={wrapperClasses}>
+                <span className={innerClasses}>{letter === ' ' ? '\u00A0' : letter}</span>
+              </span>
+            )
+          })}
+          <span className="text-white">{'>'}</span>
         </span>
         {showUnderline && <span className={underlineClasses} />}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>
   )
-
-  function clearTimers() {
-    timersRef.current.forEach((id) => window.clearTimeout(id))
-    timersRef.current = []
-  }
 }
