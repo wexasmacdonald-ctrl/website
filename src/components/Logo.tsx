@@ -10,12 +10,13 @@ type Props = {
 const LETTERS = 'MACDONALD AI'.split('')
 const MIN_VISIBLE_LETTERS = 1
 const OPEN_TOTAL_MS = 700
-const CLOSE_TOTAL_MS = 1500
+const CLOSE_TOTAL_MS = 800
 const COLOR_SETTLE_DELAY_MS = 220
 const LETTER_FINAL_COLOR = LETTERS.map((_, idx) => (idx >= LETTERS.length - 2 ? 'red' : 'white'))
 const DYNAMIC_LETTER_COUNT = Math.max(LETTERS.length - MIN_VISIBLE_LETTERS, 1)
 const OPEN_STEP_DELAY_MS = OPEN_TOTAL_MS / DYNAMIC_LETTER_COUNT
 const CLOSE_STEP_DELAY_MS = CLOSE_TOTAL_MS / DYNAMIC_LETTER_COUNT
+const CARET_BITE_DURATION_MS = 160
 
 function createVisibilityArray(expanded: boolean) {
   return LETTERS.map((_, idx) => (expanded ? true : idx < MIN_VISIBLE_LETTERS))
@@ -31,6 +32,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const [letterSettled, setLetterSettled] = useState<boolean[]>(() => createSettledArray(forceExpanded))
   const timersRef = useRef<number[]>([])
   const hasInteractedRef = useRef(forceExpanded)
+  const [caretChar, setCaretChar] = useState<'-' | '>'>('>')
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -56,6 +58,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     ensureBaseLetterVisible()
     clearTimers()
     hasInteractedRef.current = true
+    setCaretChar('>')
 
     LETTERS.forEach((_, idx) => {
       if (idx < MIN_VISIBLE_LETTERS) return
@@ -86,9 +89,11 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const closeLetters = useCallback(() => {
     ensureBaseLetterVisible()
     clearTimers()
+    setCaretChar('>')
     if (!hasInteractedRef.current) {
       setVisibleLetters(createVisibilityArray(false))
       setLetterSettled(createSettledArray(false))
+      setCaretChar('>')
       return
     }
 
@@ -98,6 +103,12 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
       const delay = reverseIdx * CLOSE_STEP_DELAY_MS
 
       const hideTimeout = window.setTimeout(() => {
+        setCaretChar('-')
+        const revertTimeout = window.setTimeout(() => {
+          setCaretChar('>')
+        }, CARET_BITE_DURATION_MS)
+        timersRef.current.push(revertTimeout)
+
         setVisibleLetters((prev) => {
           if (!prev[idx]) return prev
           const next = [...prev]
@@ -114,6 +125,11 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
       timersRef.current.push(hideTimeout)
     })
+
+    const finalResetTimeout = window.setTimeout(() => {
+      setCaretChar('>')
+    }, CLOSE_TOTAL_MS + CARET_BITE_DURATION_MS)
+    timersRef.current.push(finalResetTimeout)
   }, [clearTimers, ensureBaseLetterVisible])
 
   useEffect(() => {
@@ -128,6 +144,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
       setHovered(true)
       setVisibleLetters(createVisibilityArray(true))
       setLetterSettled(createSettledArray(true))
+      setCaretChar('>')
       return
     }
 
@@ -135,6 +152,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     hasInteractedRef.current = false
     setVisibleLetters(createVisibilityArray(false))
     setLetterSettled(createSettledArray(false))
+    setCaretChar('>')
   }, [forceExpanded, clearTimers])
 
   useEffect(() => {
@@ -182,6 +200,9 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
         onTouchEnd: () => setHovered(false),
       }
 
+  const caretDisplay = forceExpanded ? '>' : caretChar
+  const collapsedOnly = !forceExpanded && visibleLetters.slice(1).every((vis) => !vis)
+
   return (
     <div className={className}>
       <div className={`relative block w-full select-none ${forceExpanded ? '' : 'group'}`} aria-hidden="true" {...handlers}>
@@ -191,18 +212,22 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
             const isVisible = forceExpanded || visibleLetters[index]
             const isSettled = forceExpanded || letterSettled[index]
             const finalColor = LETTER_FINAL_COLOR[index]
+            const isCollapsedAccent = collapsedOnly && index === 0
             const wrapperClasses = [
               'inline-flex min-w-0 overflow-hidden transition-[max-width,opacity] duration-220 ease-out',
               isVisible ? 'max-w-[2ch] opacity-100' : 'max-w-0 opacity-0',
             ].join(' ')
-            const innerClasses = [
-              'inline-block transform-gpu transition-[transform,color] duration-220 ease-out',
-              isVisible ? 'translate-x-0' : '-translate-x-1',
-              !isSettled
+            const colorClass = isCollapsedAccent
+              ? 'text-[--color-brand-red]'
+              : !isSettled
                 ? 'text-[--color-brand-red]'
                 : finalColor === 'red'
                   ? 'text-[--color-brand-red]'
-                  : 'text-white',
+                  : 'text-white'
+            const innerClasses = [
+              'inline-block transform-gpu transition-[transform,color] duration-220 ease-out',
+              isVisible ? 'translate-x-0' : '-translate-x-1',
+              colorClass,
             ].join(' ')
 
             return (
@@ -211,7 +236,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
               </span>
             )
           })}
-          <span className="text-white">{'>'}</span>
+          <span className="text-white">{caretDisplay}</span>
         </span>
         {showUnderline && <span className={underlineClasses} />}
       </div>
