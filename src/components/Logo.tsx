@@ -7,17 +7,17 @@ type Props = {
 
 export default function Logo({ className, forceExpanded = false, textClassName, showUnderline = true }: Props) {
   const collapsedClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-300 ease-out',
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-[opacity,transform,filter] duration-500 ease-in-out',
     forceExpanded
       ? 'opacity-0 pointer-events-none'
-      : 'opacity-100 translate-x-0 blur-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:translate-x-4 group-focus-visible:translate-x-4 group-hover:blur-sm group-focus-visible:blur-sm',
+      : 'opacity-100 translate-x-0 blur-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:translate-x-6 group-focus-visible:translate-x-6 group-hover:blur-[6px] group-focus-visible:blur-[6px]',
   ].join(' ')
 
   const expandedContainerClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-300 ease-out',
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-[opacity,transform,filter] duration-500 ease-in-out',
     forceExpanded
       ? 'opacity-100 translate-x-0 blur-0'
-      : 'pointer-events-none opacity-0 -translate-x-4 blur-sm group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0 group-focus-visible:translate-x-0 group-hover:blur-0 group-focus-visible:blur-0',
+      : 'pointer-events-none opacity-0 -translate-x-6 blur-[6px] group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0 group-focus-visible:translate-x-0 group-hover:blur-0 group-focus-visible:blur-0',
   ].join(' ')
 
   const underlineClasses = [
@@ -32,18 +32,18 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const macLetters = Array.from('MACDONALD')
   const aiLetters = Array.from('AI')
-  const delayStep = 45
+  const delayStep = 70
 
   function renderAnimatedLetter(char: string, delayIndex: number, target: 'white' | 'red', key: string) {
     const displayChar = char === ' ' ? '\u00A0' : char
     const targetColorClass = target === 'red' ? 'text-[--color-brand-red]' : 'text-white'
 
     const classes = [
-      'inline-block transform-gpu transition-all duration-300 ease-out',
+      'inline-block transform-gpu transition-[opacity,transform,filter,color] duration-500 ease-in-out',
       forceExpanded
         ? `opacity-100 translate-x-0 blur-0 ${targetColorClass}`
         : [
-            'opacity-0 translate-x-3 blur-sm text-[--color-brand-red]',
+            'opacity-0 translate-x-6 blur-[6px] text-[--color-brand-red]',
             'group-hover:opacity-100 group-focus-visible:opacity-100',
             'group-hover:translate-x-0 group-focus-visible:translate-x-0',
             'group-hover:blur-0 group-focus-visible:blur-0',
