@@ -170,9 +170,9 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
                     ? 'text-white'
                     : 'text-[--color-brand-red]'
 
-              const motionClass = isVisible
-                ? 'opacity-100 translate-x-0 blur-0'
-                : 'opacity-0 -translate-x-3 blur-[3px]'
+      const motionClass = isVisible
+        ? 'opacity-100 translate-x-0 blur-0'
+        : 'opacity-0 translate-x-3 blur-[3px]'
 
               return (
                 <span
