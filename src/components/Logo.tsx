@@ -198,9 +198,9 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const sizeClasses =
     textClassName ??
-    'text-[clamp(1.35rem,12vw,2.3rem)] sm:text-[clamp(1.2rem,6vw,2.2rem)] md:text-[clamp(1.4rem,4.2vw,2.6rem)] lg:text-[3rem]'
+    'text-[clamp(0.95rem,4.2vw,1.5rem)] sm:text-[clamp(1.1rem,3.8vw,1.8rem)] md:text-[2rem] lg:text-[2.45rem]'
 
-  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.02em] gap-[0.08em] px-1 ${sizeClasses}`
+  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
   const underlineWidthClass = forceExpanded ? 'right-0' : 'right-[78%]'
   const underlineClasses = [
@@ -254,7 +254,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
               </span>
             )
           })}
-          <span className="text-white">{caretDisplay}</span>
+          <span className="text-white ml-[0.08em]">{caretDisplay}</span>
         </span>
         {showUnderline && <span className={underlineClasses} />}
       </div>
