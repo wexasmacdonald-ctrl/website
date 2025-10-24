@@ -7,13 +7,17 @@ type Props = {
 
 export default function Logo({ className, forceExpanded = false, textClassName, showUnderline = true }: Props) {
   const collapsedClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transition-opacity duration-200 ease-out',
-    forceExpanded ? 'opacity-0' : 'opacity-100 group-hover:opacity-0 group-focus-visible:opacity-0',
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-300 ease-out',
+    forceExpanded
+      ? 'opacity-0 pointer-events-none'
+      : 'opacity-100 translate-x-0 blur-0 group-hover:opacity-0 group-focus-visible:opacity-0 group-hover:translate-x-4 group-focus-visible:translate-x-4 group-hover:blur-sm group-focus-visible:blur-sm',
   ].join(' ')
 
-  const expandedClasses = [
-    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transition-opacity duration-200 ease-out',
-    forceExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+  const expandedContainerClasses = [
+    'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transform-gpu transition-all duration-300 ease-out',
+    forceExpanded
+      ? 'opacity-100 translate-x-0 blur-0'
+      : 'pointer-events-none opacity-0 -translate-x-4 blur-sm group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0 group-focus-visible:translate-x-0 group-hover:blur-0 group-focus-visible:blur-0',
   ].join(' ')
 
   const underlineClasses = [
@@ -26,6 +30,38 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     textClassName ?? 'text-[clamp(1.2rem,6.5vw,1.95rem)] md:text-[2.1rem] lg:text-[2.5rem]',
   ].join(' ')
 
+  const macLetters = Array.from('MACDONALD')
+  const aiLetters = Array.from('AI')
+  const delayStep = 45
+
+  function renderAnimatedLetter(char: string, delayIndex: number, target: 'white' | 'red', key: string) {
+    const displayChar = char === ' ' ? '\u00A0' : char
+    const targetColorClass = target === 'red' ? 'text-[--color-brand-red]' : 'text-white'
+
+    const classes = [
+      'inline-block transform-gpu transition-all duration-300 ease-out',
+      forceExpanded
+        ? `opacity-100 translate-x-0 blur-0 ${targetColorClass}`
+        : [
+            'opacity-0 translate-x-3 blur-sm text-[--color-brand-red]',
+            'group-hover:opacity-100 group-focus-visible:opacity-100',
+            'group-hover:translate-x-0 group-focus-visible:translate-x-0',
+            'group-hover:blur-0 group-focus-visible:blur-0',
+            target === 'red'
+              ? 'group-hover:text-[--color-brand-red] group-focus-visible:text-[--color-brand-red]'
+              : 'group-hover:text-white group-focus-visible:text-white',
+          ].join(' '),
+    ].join(' ')
+
+    const style = forceExpanded ? undefined : { transitionDelay: `${delayIndex * delayStep}ms` }
+
+    return (
+      <span key={key} className={classes} style={style}>
+        {displayChar}
+      </span>
+    )
+  }
+
   return (
     <div className={className}>
       <div className={`relative block w-full leading-none select-none ${forceExpanded ? '' : 'group'}`} aria-hidden="true">
@@ -35,11 +71,14 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
             <span className="text-[--color-brand-red]">M</span>
             {'>'}
           </span>
-          <span className={expandedClasses}>
-            {'<'}
-            <span className="text-white">MacDonald</span>
-            <span className="text-[--color-brand-red]">AI</span>
-            {'>'}
+          <span className={expandedContainerClasses}>
+            {renderAnimatedLetter('<', 0, 'white', 'open-angle')}
+            {macLetters.map((letter, index) => renderAnimatedLetter(letter, index + 1, 'white', `mac-${letter}-${index}`))}
+            {renderAnimatedLetter(' ', macLetters.length + 1, 'white', 'space')}
+            {aiLetters.map((letter, index) =>
+              renderAnimatedLetter(letter, macLetters.length + 2 + index, 'red', `ai-${letter}-${index}`),
+            )}
+            {renderAnimatedLetter('>', macLetters.length + aiLetters.length + 2, 'white', 'close-angle')}
           </span>
         </span>
         {showUnderline && <span className={underlineClasses} />}

@@ -221,7 +221,6 @@ export default function AssistantChat() {
                       onKeyDown={handleTextareaKeyDown}
                       placeholder="Ask your question…"
                       className="w-full resize-none rounded-lg bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
-                      disabled={loading}
                     />
                     <div className="mt-3 flex justify-end">
                       <button
@@ -309,7 +308,6 @@ export default function AssistantChat() {
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Ask your question…"
                   className="w-full resize-none rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
-                  disabled={loading}
                 />
                 <div className="mt-2 flex justify-end">
                   <button
