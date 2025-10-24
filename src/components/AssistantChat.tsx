@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Logo from './Logo'
 
@@ -14,6 +14,7 @@ export default function AssistantChat() {
   const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const previousOverflow = useRef<string | null>(null)
+  const desktopContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -68,8 +69,7 @@ export default function AssistantChat() {
     return () => window.removeEventListener('open-assistant-chat', handleOpen)
   }, [])
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function sendMessage() {
     const trimmed = input.trim()
     if (!trimmed || loading) return
 
@@ -100,6 +100,30 @@ export default function AssistantChat() {
     }
   }
 
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    await sendMessage()
+  }
+
+  function handleTextareaKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      void sendMessage()
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen || isMobile) return
+    function handleClickOutside(event: MouseEvent) {
+      if (desktopContainerRef.current && !desktopContainerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+        setError(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen, isMobile])
+
   return (
     <>
       {!isOpen && (
@@ -115,8 +139,17 @@ export default function AssistantChat() {
       {isOpen && (
         <>
           {isMobile ? (
-            <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
-              <div className="mt-auto w-full px-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
+            <div
+              className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm"
+              onClick={() => {
+                setIsOpen(false)
+                setError(null)
+              }}
+            >
+              <div
+                className="mt-auto w-full px-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl shadow-black/60">
                   <header className="flex items-center justify-between border-b border-white/10 px-5 pt-5 pb-4">
                     <div className="flex items-center gap-2">
@@ -152,7 +185,7 @@ export default function AssistantChat() {
                             {msg.content}
                           </div>
                         ) : (
-                          <div className="inline-block max-w-[80%] rounded-lg border border-[--color-brand-red]/40 bg-white/5 px-3 py-2 text-white">
+                          <div className="inline-block max-w-[80%] rounded-lg border border-[--color-brand-red] bg-white/5 px-3 py-2 text-white">
                             <ReactMarkdown className="assistant-markdown">{msg.content}</ReactMarkdown>
                           </div>
                         )}
@@ -185,6 +218,7 @@ export default function AssistantChat() {
                       rows={2}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleTextareaKeyDown}
                       placeholder="Ask your question…"
                       className="w-full resize-none rounded-lg bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
                       disabled={loading}
@@ -203,7 +237,10 @@ export default function AssistantChat() {
               </div>
             </div>
           ) : (
-            <div className="fixed bottom-5 right-5 z-40 flex w-[320px] flex-col rounded-xl border border-white/15 bg-black/85 backdrop-blur-md shadow-2xl shadow-black/40">
+            <div
+              ref={desktopContainerRef}
+              className="fixed bottom-5 right-5 z-40 flex w-[320px] flex-col rounded-xl border border-white/15 bg-black/85 backdrop-blur-md shadow-2xl shadow-black/40"
+            >
               <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Logo className="flex-shrink-0" forceExpanded textClassName="text-sm" showUnderline={false} />
@@ -239,7 +276,7 @@ export default function AssistantChat() {
                         {msg.content}
                       </div>
                     ) : (
-                      <div className="inline-block max-w-[80%] rounded-lg border border-[--color-brand-red]/40 bg-white/5 px-3 py-2 text-white">
+                      <div className="inline-block max-w-[80%] rounded-lg border border-[--color-brand-red] bg-white/5 px-3 py-2 text-white">
                         <ReactMarkdown className="assistant-markdown">{msg.content}</ReactMarkdown>
                       </div>
                     )}
@@ -269,6 +306,7 @@ export default function AssistantChat() {
                   rows={2}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleTextareaKeyDown}
                   placeholder="Ask your question…"
                   className="w-full resize-none rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
                   disabled={loading}
