@@ -2,9 +2,10 @@ type Props = {
   className?: string
   forceExpanded?: boolean
   textClassName?: string
+  showUnderline?: boolean
 }
 
-export default function Logo({ className, forceExpanded = false, textClassName }: Props) {
+export default function Logo({ className, forceExpanded = false, textClassName, showUnderline = true }: Props) {
   const collapsedClasses = [
     'col-start-1 row-start-1 inline-flex items-baseline whitespace-nowrap transition-opacity duration-200 ease-out',
     forceExpanded ? 'opacity-0' : 'opacity-100 group-hover:opacity-0 group-focus-visible:opacity-0',
@@ -41,7 +42,7 @@ export default function Logo({ className, forceExpanded = false, textClassName }
             {'>'}
           </span>
         </span>
-        <span className={underlineClasses} />
+        {showUnderline && <span className={underlineClasses} />}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>

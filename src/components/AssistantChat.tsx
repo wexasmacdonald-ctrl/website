@@ -120,8 +120,10 @@ export default function AssistantChat() {
                 <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl shadow-black/60">
                   <header className="flex items-center justify-between border-b border-white/10 px-5 pt-5 pb-4">
                     <div className="flex items-center gap-2">
-                      <Logo className="flex-shrink-0" forceExpanded textClassName="text-base" />
-                      <span className="text-xs font-semibold uppercase tracking-wide text-white/60">Assistant</span>
+                      <Logo className="flex-shrink-0" forceExpanded textClassName="text-base" showUnderline={false} />
+                      <span className="text-xs font-semibold uppercase tracking-wide text-[--color-brand-red] leading-none">
+                        Assistant
+                      </span>
                     </div>
                     <button
                       type="button"
@@ -204,8 +206,8 @@ export default function AssistantChat() {
             <div className="fixed bottom-5 right-5 z-40 flex w-[320px] flex-col rounded-xl border border-white/15 bg-black/85 backdrop-blur-md shadow-2xl shadow-black/40">
               <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Logo className="flex-shrink-0" forceExpanded textClassName="text-sm" />
-                  <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-white/60">
+                  <Logo className="flex-shrink-0" forceExpanded textClassName="text-sm" showUnderline={false} />
+                  <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-[--color-brand-red] leading-none">
                     Assistant
                   </span>
                 </div>
