@@ -180,9 +180,8 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
-  const underlineWidthClass = forceExpanded ? 'right-0' : 'right-[78%]'
   const underlineClasses = [
-    `absolute left-0 ${underlineWidthClass} -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250`,
+    'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250',
     forceExpanded || hovered ? 'scale-x-100' : 'scale-x-0',
   ].join(' ')
 
