@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
+import Logo from './Logo'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
@@ -116,9 +117,12 @@ export default function AssistantChat() {
           {isMobile ? (
             <div className="fixed inset-0 z-50 flex flex-col bg-black/60 backdrop-blur-sm">
               <div className="mt-auto w-full px-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
-                <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl shadow-black/60">
+                <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-3xl border-2 border-[--color-brand-red] bg-black/90 shadow-2xl shadow-black/60">
                   <header className="flex items-center justify-between border-b border-white/10 px-5 pt-5 pb-4">
-                    <p className="text-base font-semibold text-white">MacDonald AI Assistant</p>
+                    <div className="flex items-center gap-2">
+                      <Logo className="w-32 max-w-full" forceExpanded />
+                      <span className="text-xs font-semibold uppercase tracking-wide text-white/60">Assistant</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -153,7 +157,16 @@ export default function AssistantChat() {
                       </div>
                     ))}
                     {loading && (
-                      <p className="text-xs text-white/60">Assistant is thinking…</p>
+                      <div className="flex justify-start text-white/60">
+                        <div className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
+                          <span className="sr-only">Assistant is typing</span>
+                          <div className="flex items-center gap-1">
+                            <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-[--color-brand-red]" />
+                            <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.2s] rounded-full bg-[--color-brand-red]" />
+                            <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.4s] rounded-full bg-[--color-brand-red]" />
+                          </div>
+                        </div>
+                      </div>
                     )}
                     {error && (
                       <p className="rounded bg-red-500/20 px-3 py-2 text-xs text-red-200">
@@ -188,10 +201,11 @@ export default function AssistantChat() {
               </div>
             </div>
           ) : (
-            <div className="fixed bottom-5 right-5 z-40 flex w-[320px] flex-col rounded-xl border border-white/15 bg-black/85 backdrop-blur-md shadow-2xl shadow-black/40">
+            <div className="fixed bottom-5 right-5 z-40 flex w-[320px] flex-col rounded-xl border-2 border-[--color-brand-red] bg-black/85 backdrop-blur-md shadow-2xl shadow-black/40">
               <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-white">MacDonald AI Assistant</p>
+                <div className="flex items-center gap-2">
+                  <Logo className="w-28 max-w-full" forceExpanded />
+                  <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-white/60">Assistant</span>
                 </div>
                 <button
                   type="button"
@@ -228,7 +242,16 @@ export default function AssistantChat() {
                   </div>
                 ))}
                 {loading && (
-                  <p className="text-xs text-white/60">Assistant is thinking…</p>
+                  <div className="flex justify-start text-white/60">
+                    <div className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
+                      <span className="sr-only">Assistant is typing</span>
+                      <div className="flex items-center gap-1">
+                        <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-[--color-brand-red]" />
+                        <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.2s] rounded-full bg-[--color-brand-red]" />
+                        <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.4s] rounded-full bg-[--color-brand-red]" />
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {error && (
                   <p className="rounded bg-red-500/20 px-3 py-2 text-xs text-red-200">
