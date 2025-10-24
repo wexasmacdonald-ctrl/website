@@ -103,18 +103,24 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
       const delay = reverseIdx * CLOSE_STEP_DELAY_MS
 
       const hideTimeout = window.setTimeout(() => {
+        let letterWasVisible = false
+        setVisibleLetters((prev) => {
+          if (!prev[idx]) return prev
+          letterWasVisible = true
+          const next = [...prev]
+          next[idx] = false
+          return next
+        })
+        if (!letterWasVisible) {
+          return
+        }
+
         setCaretChar('-')
         const revertTimeout = window.setTimeout(() => {
           setCaretChar('>')
         }, CARET_BITE_DURATION_MS)
         timersRef.current.push(revertTimeout)
 
-        setVisibleLetters((prev) => {
-          if (!prev[idx]) return prev
-          const next = [...prev]
-          next[idx] = false
-          return next
-        })
         setLetterSettled((prev) => {
           if (!prev[idx]) return prev
           const next = [...prev]
@@ -197,7 +203,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
         onFocusCapture: () => setHovered(true),
         onBlurCapture: () => setHovered(false),
         onTouchStart: () => setHovered(true),
-        onTouchEnd: () => setHovered(false),
       }
 
   const caretDisplay = forceExpanded ? '>' : caretChar
