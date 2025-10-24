@@ -176,7 +176,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const sizeClasses =
     textClassName ??
-    'text-[clamp(0.95rem,4.2vw,1.5rem)] sm:text-[clamp(1.1rem,3.8vw,1.8rem)] md:text-[2rem] lg:text-[2.45rem]'
+    'text-[clamp(1.1rem,4.8vw,1.7rem)] sm:text-[clamp(1.25rem,4vw,2rem)] md:text-[2rem] lg:text-[2.45rem]'
 
   const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
