@@ -17,6 +17,7 @@ const DYNAMIC_LETTER_COUNT = Math.max(LETTERS.length - MIN_VISIBLE_LETTERS, 1)
 const OPEN_STEP_DELAY_MS = OPEN_TOTAL_MS / DYNAMIC_LETTER_COUNT
 const CLOSE_STEP_DELAY_MS = CLOSE_TOTAL_MS / DYNAMIC_LETTER_COUNT
 const CARET_BITE_DURATION_MS = 160
+const SCROLL_CLOSE_THRESHOLD = 28
 
 function createVisibilityArray(expanded: boolean) {
   return LETTERS.map((_, idx) => (expanded ? true : idx < MIN_VISIBLE_LETTERS))
@@ -32,6 +33,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
   const [letterSettled, setLetterSettled] = useState<boolean[]>(() => createSettledArray(forceExpanded))
   const timersRef = useRef<number[]>([])
   const hasInteractedRef = useRef(forceExpanded)
+  const lastScrollYRef = useRef(0)
   const [caretChar, setCaretChar] = useState<'-' | '>'>('>')
 
   const clearTimers = useCallback(() => {
@@ -116,9 +118,13 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
         }
 
         setCaretChar('-')
+        const biteResetDelay = Math.min(
+          CARET_BITE_DURATION_MS,
+          Math.max(CLOSE_STEP_DELAY_MS * 0.8, 45),
+        )
         const revertTimeout = window.setTimeout(() => {
           setCaretChar('>')
-        }, CARET_BITE_DURATION_MS)
+        }, biteResetDelay)
         timersRef.current.push(revertTimeout)
 
         setLetterSettled((prev) => {
@@ -174,7 +180,13 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   useEffect(() => {
     if (forceExpanded) return
+    lastScrollYRef.current = window.scrollY || 0
     const handleScroll = () => {
+      const currentY = window.scrollY || 0
+      if (Math.abs(currentY - lastScrollYRef.current) < SCROLL_CLOSE_THRESHOLD) {
+        return
+      }
+      lastScrollYRef.current = currentY
       setHovered(false)
     }
 
@@ -186,12 +198,13 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const sizeClasses =
     textClassName ??
-    'text-[clamp(0.95rem,4.2vw,1.5rem)] sm:text-[clamp(1.1rem,3.8vw,1.8rem)] md:text-[2rem] lg:text-[2.45rem]'
+    'text-[clamp(1.35rem,12vw,2.3rem)] sm:text-[clamp(1.2rem,6vw,2.2rem)] md:text-[clamp(1.4rem,4.2vw,2.6rem)] lg:text-[3rem]'
 
-  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
+  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.02em] gap-[0.08em] px-1 ${sizeClasses}`
 
+  const underlineWidthClass = forceExpanded ? 'right-0' : 'right-[78%]'
   const underlineClasses = [
-    'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250',
+    `absolute left-0 ${underlineWidthClass} -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250`,
     forceExpanded || hovered ? 'scale-x-100' : 'scale-x-0',
   ].join(' ')
 
