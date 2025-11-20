@@ -1,5 +1,12 @@
 ﻿# MacDonald Automation – Service Capabilities
 
+## Custom Apps & Websites
+
+- Design and build fully custom marketing sites (Next.js, Vite, Webflow) with on-brand animation and strict performance budgets.
+- Develop customer portals and internal tools that connect to CRMs, ERPs, spreadsheets, or APIs—complete with auth, dashboards, and automations.
+- Ship AI-powered product prototypes/MVPs that combine chat, workflow automation, and multi-step task execution.
+- Modernize or migrate existing web apps and sites, cleaning up component libraries, UX, and deployment pipelines.
+
 ## Easy / Typical Automations
 
 - Lead capture chatbot to qualify inbound prospects and route them to the right team.
