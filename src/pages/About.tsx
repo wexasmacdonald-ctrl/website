@@ -25,10 +25,10 @@ export default function About() {
 
         <div>
           <p className="text-white/80">
-            I'm Joseph MacDonald, a developer, builder, and entrepreneur from Ottawa. I'm driven by one thing: making technology work harder so people don't have to. That's what led me to create MacDonald AI, a company that builds intelligent automation systems, AI agents, and custom software that handle the heavy lifting for any business, big or small.
+            I'm Joseph MacDonald, a developer, builder, and entrepreneur from Ottawa. I run MacDonald AI, where we use AI and software to create systems that make (or save) real money: automation for ops, custom software, integrations, data pipelines, and agents where they actually help. We don't just add a chatbot to your site "we build the underlying workflows and tools that move the business.
           </p>
           <p className="mt-4 text-white/70">
-            Whether it's streamlining operations for a large company or giving a smaller team the tools to compete at that level, my goal is the same to build systems that save time, boost performance, and make work feel effortless.
+            Big company or small team, the goal is the same: design and ship reliable automation that saves time, boosts performance, and pays for itself fast.
           </p>
         </div>
       </div>
