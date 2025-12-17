@@ -180,11 +180,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
-  const underlineClasses = [
-    'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250',
-    forceExpanded || hovered ? 'scale-x-100' : 'scale-x-0',
-  ].join(' ')
-
   const handlers = forceExpanded
     ? {}
     : {
@@ -232,7 +227,6 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
           })}
           <span className="text-white ml-[0.08em]">{'>'}</span>
         </span>
-        {showUnderline && <span className={underlineClasses} />}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>
