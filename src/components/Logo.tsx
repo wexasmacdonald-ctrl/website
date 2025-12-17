@@ -180,6 +180,11 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
 
   const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
+  const accentClasses = [
+    'pointer-events-none absolute inset-0 -z-10 flex items-center justify-center transition-all duration-250 ease-out',
+    forceExpanded || hovered ? 'opacity-100 scale-100' : 'opacity-70 scale-95',
+  ].join(' ')
+
   const handlers = forceExpanded
     ? {}
     : {
@@ -227,6 +232,11 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
           })}
           <span className="text-white ml-[0.08em]">{'>'}</span>
         </span>
+        {showUnderline && (
+          <span className={accentClasses} aria-hidden="true">
+            <span className="h-[0.55rem] w-[82%] max-w-[520px] rounded-full bg-gradient-to-r from-[--color-brand-red]/90 via-[--color-brand-red]/40 to-transparent blur-[2px]" />
+          </span>
+        )}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>
