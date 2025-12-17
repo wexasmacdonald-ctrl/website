@@ -178,18 +178,11 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     textClassName ??
     'text-[clamp(1.1rem,4.8vw,1.7rem)] sm:text-[clamp(1.25rem,4vw,2rem)] md:text-[2rem] lg:text-[2.45rem]'
 
-  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] ${sizeClasses}`
-  const bracketClasses = 'text-white px-[0.08em]'
+  const baseTextClasses = `inline-flex items-baseline font-extrabold leading-none tracking-[0.025em] px-0.5 ${sizeClasses}`
 
-  const underlineWrapperClasses = 'pointer-events-none absolute inset-x-0 -bottom-2 flex justify-center'
-  const underlineTrackClasses = 'relative h-[0.25rem] w-[82%] max-w-[520px] overflow-hidden rounded-full bg-white/10'
-  const underlineGlowClasses = [
-    'absolute inset-0 rounded-full bg-gradient-to-r from-[--color-brand-red] via-[--color-brand-red]/70 to-transparent transition-transform duration-300 ease-out',
-    forceExpanded || hovered ? 'translate-x-0' : '-translate-x-6',
-  ].join(' ')
-  const underlineDotClasses = [
-    'absolute -right-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-[--color-brand-red] shadow-[0_0_12px_rgba(255,0,0,0.45)] transition-all duration-300 ease-out',
-    forceExpanded || hovered ? 'scale-100 opacity-100 translate-x-0' : 'scale-0 opacity-0 translate-x-3',
+  const underlineClasses = [
+    'absolute left-0 right-0 -bottom-1 h-0.5 bg-[--color-brand-red] transform origin-right transition-transform duration-250',
+    forceExpanded || hovered ? 'scale-x-100' : 'scale-x-0',
   ].join(' ')
 
   const handlers = forceExpanded
@@ -208,7 +201,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     <div className={className}>
       <div className={`relative block w-full select-none ${forceExpanded ? '' : 'group'}`} aria-hidden="true" {...handlers}>
         <span className={baseTextClasses}>
-          <span className={bracketClasses}>{'<'}</span>
+          <span className="text-white">{'<'}</span>
           {LETTERS.map((letter, index) => {
             const isVisible = forceExpanded || visibleLetters[index]
             const isSettled = forceExpanded || letterSettled[index]
@@ -237,16 +230,9 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
               </span>
             )
           })}
-          <span className={bracketClasses}>{'>'}</span>
+          <span className="text-white ml-[0.08em]">{'>'}</span>
         </span>
-        {showUnderline && (
-          <span className={underlineWrapperClasses} aria-hidden="true">
-            <span className={underlineTrackClasses}>
-              <span className={underlineGlowClasses} />
-              <span className={underlineDotClasses} />
-            </span>
-          </span>
-        )}
+        {showUnderline && <span className={underlineClasses} />}
       </div>
       <span className="sr-only">MacDonald AI</span>
     </div>
