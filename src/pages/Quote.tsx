@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 // Email + logging is handled server-side at /api/lead
 
 export default function Quote() {
+  const FRIENDLY_ERROR = 'We could not send your request right now. Please try again shortly.'
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -23,14 +24,15 @@ export default function Quote() {
         body: JSON.stringify({ name, email, message, source: 'quote' }),
       })
       if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}))
-        throw new Error(data?.error || 'Failed to submit')
+        console.error('Lead submission failed (quote)', resp.status)
+        throw new Error(FRIENDLY_ERROR)
       }
       setStatus('success')
       form.reset()
     } catch (err: any) {
       setStatus('error')
-      setError(err?.message || 'Something went wrong')
+      console.error('Quote form error', err)
+      setError(FRIENDLY_ERROR)
     }
   }
 
@@ -41,24 +43,51 @@ export default function Quote() {
       <form onSubmit={onSubmit} className="mt-8 grid gap-4">
         <label className="grid gap-2">
           <span className="text-sm text-white/70">Name</span>
-          <input name="name" required placeholder="Your name" className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60" />
+          <input
+            name="name"
+            required
+            placeholder="Your name"
+            className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
+          />
         </label>
         <label className="grid gap-2">
           <span className="text-sm text-white/70">Email</span>
-          <input name="email" type="email" required placeholder="you@example.com" className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60" />
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="you@example.com"
+            className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
+          />
         </label>
         <label className="grid gap-2">
           <span className="text-sm text-white/70">Message</span>
-          <textarea name="message" required rows={5} placeholder="What do you want to build or automate?" className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60" />
+          <textarea
+            name="message"
+            required
+            rows={5}
+            placeholder="What do you want to build or automate?"
+            className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
+          />
         </label>
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={status === 'sending'} className="px-5 py-2.5 rounded-md bg-[--color-brand-red] text-black font-semibold disabled:opacity-60">
-            {status === 'sending' ? 'Sending…' : 'Submit'}
+          <button
+            type="submit"
+            disabled={status === 'sending'}
+            className="px-5 py-2.5 rounded-md bg-[--color-brand-red] text-black font-semibold disabled:opacity-60"
+          >
+            {status === 'sending' ? 'Sending...' : 'Submit'}
           </button>
         </div>
-        {status === 'success' && <p className="text-sm text-emerald-400">Thanks — I received your request. I’ll reply shortly.</p>}
+        {status === 'success' && (
+          <p className="text-sm text-emerald-400">Thanks - I received your request. I'll reply shortly.</p>
+        )}
         {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
       </form>
+
+      <div className="mt-8 text-sm text-white/60">
+        Prefer email? <a className="underline" href="mailto:campbell@macdonaldautomation.com">campbell@macdonaldautomation.com</a>
+      </div>
     </main>
   )
 }

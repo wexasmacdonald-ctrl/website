@@ -9,6 +9,7 @@ type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; end: () => void }
 
 const catalogPath = join(process.cwd(), 'src/lib/services.md')
+const FRIENDLY_ERROR = 'Assistant is unavailable right now. Please try again soon.'
 const servicesCatalog = (() => {
   try {
     return readFileSync(catalogPath, 'utf8')
@@ -20,6 +21,7 @@ const servicesCatalog = (() => {
 
 const systemPrompt = [
   "You are MacDonald Automation's assistant.",
+  "We are software developers specializing in automation (custom apps, integrations, workflows). Do not claim we avoid software; respond confidently within our capabilities.",
   "Answer only questions related to the company's automation services.",
   "Politely refuse anything unrelated.",
   "Format every reply in Markdown so it is easy to read (use headings, bullet lists, and code blocks when helpful).",
@@ -41,8 +43,14 @@ export default async function handler(req: Req, res: Res) {
   }
 
   const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' })
-  if (!SYSTEM_PROMPT) return res.status(500).json({ error: 'Services catalog unavailable' })
+  if (!apiKey) {
+    console.error('assist: missing OPENAI_API_KEY')
+    return res.status(500).json({ error: FRIENDLY_ERROR })
+  }
+  if (!SYSTEM_PROMPT) {
+    console.error('assist: services catalog unavailable')
+    return res.status(500).json({ error: FRIENDLY_ERROR })
+  }
 
   let body = req.body
   if (Buffer.isBuffer(body)) body = body.toString('utf8')
@@ -51,7 +59,7 @@ export default async function handler(req: Req, res: Res) {
   }
 
   const rawMessages: Array<{ role: string; content: string }> = Array.isArray(body?.messages) ? body.messages : []
-  if (!rawMessages.length) return res.status(400).json({ error: 'messages array is required' })
+  if (!rawMessages.length) return res.status(400).json({ error: 'Please include at least one message.' })
 
   const normalizedMessages = rawMessages
     .map((msg) => ({
@@ -60,7 +68,7 @@ export default async function handler(req: Req, res: Res) {
     }))
     .filter((msg) => msg.role && msg.content)
 
-  if (!normalizedMessages.length) return res.status(400).json({ error: 'No valid messages provided' })
+  if (!normalizedMessages.length) return res.status(400).json({ error: 'Please include a valid message.' })
 
   try {
     const payload = {
@@ -83,17 +91,20 @@ export default async function handler(req: Req, res: Res) {
 
     const data = await response.json().catch(() => null)
     if (!response.ok) {
-      const errorMessage = data?.error?.message || data?.message || 'OpenAI request failed'
-      return res.status(response.status).json({ error: errorMessage })
+      console.error('assist: OpenAI request failed', response.status, data)
+      return res.status(response.status).json({ error: FRIENDLY_ERROR })
     }
 
     const assistantText = extractChatText(data)
-    if (!assistantText) return res.status(500).json({ error: 'Empty response from model' })
+    if (!assistantText) {
+      console.error('assist: empty response from model', data)
+      return res.status(500).json({ error: FRIENDLY_ERROR })
+    }
 
     return res.status(200).json({ message: assistantText })
   } catch (err: any) {
     console.error('assist endpoint error', err)
-    return res.status(500).json({ error: err?.message || 'Unexpected error' })
+    return res.status(500).json({ error: FRIENDLY_ERROR })
   }
 }
 

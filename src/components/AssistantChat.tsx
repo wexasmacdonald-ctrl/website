@@ -6,6 +6,7 @@ import Logo from './Logo'
 type Message = { role: 'user' | 'assistant'; content: string }
 
 export default function AssistantChat() {
+  const FRIENDLY_ERROR = 'Sorry, something went wrong. Please try again in a moment.'
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -86,15 +87,16 @@ export default function AssistantChat() {
         body: JSON.stringify({ messages: nextMessages }),
       })
       if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}))
-        throw new Error(data?.error || 'Assistant unavailable right now')
+        console.error('Assistant response not ok', resp.status)
+        throw new Error(FRIENDLY_ERROR)
       }
       const data = await resp.json()
       const reply = typeof data?.message === 'string' ? data.message.trim() : ''
-      if (!reply) throw new Error('Assistant returned an empty response')
+      if (!reply) throw new Error(FRIENDLY_ERROR)
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }])
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong')
+      console.error('Assistant chat error', err)
+      setError(FRIENDLY_ERROR)
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 // Email + logging is handled server-side at /api/lead
 
 export default function Contact() {
+  const FRIENDLY_ERROR = 'We could not send your message right now. Please try again shortly.'
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -24,14 +25,15 @@ export default function Contact() {
         body: JSON.stringify({ name, email, message, source: 'contact' }),
       })
       if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}))
-        throw new Error(data?.error || 'Failed to submit')
+        console.error('Lead submission failed (contact)', resp.status)
+        throw new Error(FRIENDLY_ERROR)
       }
       setStatus('success')
       form.reset()
     } catch (err: any) {
       setStatus('error')
-      setError(err?.message || 'Something went wrong')
+      console.error('Contact form error', err)
+      setError(FRIENDLY_ERROR)
     }
   }
 

@@ -18,6 +18,8 @@ import nodemailer from 'nodemailer'
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; send: (b: any) => void; end: () => void }
 
+const FRIENDLY_ERROR = 'We could not process your request right now. Please try again shortly.'
+
 export default async function handler(req: Req, res: Res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -34,8 +36,8 @@ export default async function handler(req: Req, res: Res) {
   const message = trim(body?.message)
   const source = trim(body?.source) || 'web'
 
-  if (!name || !email || !message) return res.status(400).json({ error: 'name, email, and message are required' })
-  if (!isEmail(email)) return res.status(400).json({ error: 'invalid email' })
+  if (!name || !email || !message) return res.status(400).json({ error: 'Please include your name, email, and message.' })
+  if (!isEmail(email)) return res.status(400).json({ error: 'Please use a valid email address.' })
 
   const SUPABASE_URL = process.env.SUPABASE_URL
   const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
@@ -49,19 +51,19 @@ export default async function handler(req: Req, res: Res) {
   const SMTP_USER = (process.env.SMTP_USER || '').trim()
   const SMTP_PASS = (process.env.SMTP_PASS || '').trim()
 
-  if (!SUPABASE_URL) return res.status(500).json({ error: 'Missing SUPABASE_URL' })
-  if (!SUPABASE_SERVICE_ROLE) return res.status(500).json({ error: 'Missing SUPABASE_SERVICE_ROLE' })
-  if (!EMAIL_TO) return res.status(500).json({ error: 'Missing EMAIL_TO' })
-  if (!EMAIL_FROM) return res.status(500).json({ error: 'Missing EMAIL_FROM (defaults to SMTP_USER)' })
-  if (!SMTP_USER) return res.status(500).json({ error: 'Missing SMTP_USER' })
-  if (!SMTP_PASS) return res.status(500).json({ error: 'Missing SMTP_PASS' })
+  if (!SUPABASE_URL) { console.error('lead: missing SUPABASE_URL'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
+  if (!SUPABASE_SERVICE_ROLE) { console.error('lead: missing SUPABASE_SERVICE_ROLE'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
+  if (!EMAIL_TO) { console.error('lead: missing EMAIL_TO'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
+  if (!EMAIL_FROM) { console.error('lead: missing EMAIL_FROM'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
+  if (!SMTP_USER) { console.error('lead: missing SMTP_USER'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
+  if (!SMTP_PASS) { console.error('lead: missing SMTP_PASS'); return res.status(503).json({ error: FRIENDLY_ERROR }) }
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
     const { error: insertError } = await supabase.from('leads').insert({ name, email, message, source })
     if (insertError) {
       console.error('Supabase lead insert failed', insertError)
-      return res.status(500).json({ error: insertError.message || 'Failed to log lead' })
+      return res.status(500).json({ error: FRIENDLY_ERROR })
     }
 
     const transporter = nodemailer.createTransport({
@@ -98,7 +100,7 @@ export default async function handler(req: Req, res: Res) {
       await transporter.sendMail(notifyPayload)
     } catch (mailError: any) {
       console.error('SMTP notification failed', mailError)
-      return res.status(502).json({ error: mailError?.message || 'Failed to send notification email' })
+      return res.status(502).json({ error: FRIENDLY_ERROR })
     }
 
     if (EMAIL_AUTOREPLY) {
@@ -129,7 +131,7 @@ export default async function handler(req: Req, res: Res) {
     return res.status(200).json({ ok: true })
   } catch (err: any) {
     console.error('Lead handler threw', err)
-    return res.status(500).json({ error: err?.message || 'Unexpected error' })
+    return res.status(500).json({ error: FRIENDLY_ERROR })
   }
 }
 

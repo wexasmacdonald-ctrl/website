@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation, Link } from 'react-router-dom'
+import { Route, Routes, useLocation, Link, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
@@ -6,14 +6,13 @@ import MobileCTA from './components/MobileCTA'
 import Home from './pages/Home'
 import About from './pages/About'
 import Services from './pages/Services'
-import Contact from './pages/Contact'
 import Quote from './pages/Quote'
 import AssistantChat from './components/AssistantChat'
 import { CALENDLY_URL } from './lib/calendly'
 
 export default function App() {
   const location = useLocation()
-  const hideCTA = ['/quote', '/contact'].includes(location.pathname)
+  const hideCTA = ['/quote'].includes(location.pathname)
   const [isNearFooter, setIsNearFooter] = useState(false)
   const scrollThreshold = 280
 
@@ -45,7 +44,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
-          <Route path="/contact" element={<Contact />} />
+          <Route path="/contact" element={<Navigate to="/quote" replace />} />
           <Route path="/quote" element={<Quote />} />
         </Routes>
       </div>
