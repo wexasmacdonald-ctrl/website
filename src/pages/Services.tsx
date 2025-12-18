@@ -1,8 +1,8 @@
 export default function Services() {
   const services = [
-    { title: 'AI Agents', desc: 'Task‑specific agents that operate across apps and data.' },
+    { title: 'AI Agents', desc: 'Task-specific agents that operate across apps and data.' },
     { title: 'Workflow Automation', desc: 'Browser automation, APIs, and schedulers that save hours.' },
-    { title: 'Integrations', desc: 'Supabase, OpenAI, webhooks, spreadsheets — wired cleanly.' },
+    { title: 'Integrations', desc: 'APIs, CRMs, databases, webhooks, spreadsheets—wired cleanly.' },
     { title: 'Dashboards & Reporting', desc: 'Clear, actionable views of performance with automated updates.' },
     { title: 'Websites & Web Apps', desc: 'Modern, fast, and maintainable frontends with clean backends.' },
   ]
@@ -10,7 +10,7 @@ export default function Services() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-16">
       <h1 className="text-3xl font-bold">Services</h1>
-      <p className="mt-3 text-white/80">Straightforward, high‑impact deliverables. Built to be reliable, fast, and easy to use.</p>
+      <p className="mt-3 text-white/80">Straightforward, high-impact deliverables. Built to be reliable, fast, and easy to use.</p>
 
       <ul className="mt-8 divide-y divide-white/10">
         {services.map((s) => (
