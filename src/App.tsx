@@ -61,12 +61,6 @@ export default function App() {
             >
               Book a Call
             </a>
-            <Link
-              to="/quote"
-              className="rounded-full border border-white/40 px-5 py-2 font-semibold text-white transition hover:border-white"
-            >
-              Get a Quote
-            </Link>
           </div>
         </div>
       )}
