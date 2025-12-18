@@ -12,7 +12,6 @@ export default function Footer() {
           >
             Joseph MacDonald
           </a>
-          <a href="/quote" className="hover:text-white">Get a Quote</a>
         </div>
       </div>
     </footer>
