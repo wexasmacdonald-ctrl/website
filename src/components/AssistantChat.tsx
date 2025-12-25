@@ -2,20 +2,29 @@ import { useState, useRef, useEffect } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import Logo from './Logo'
+import { useLanguage } from '../lib/i18n'
 
 type Message = { role: 'user' | 'assistant'; content: string }
 
-export default function AssistantChat() {
-  const FRIENDLY_ERROR = 'Sorry, something went wrong. Please try again in a moment.'
+type AssistantChatProps = {
+  avoidFooter?: boolean
+}
+
+export default function AssistantChat({ avoidFooter = false }: AssistantChatProps) {
+  const { t, lang } = useLanguage()
+  const FRIENDLY_ERROR = t('chat.error')
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [desktopBottom, setDesktopBottom] = useState(20)
+  const [desktopRight, setDesktopRight] = useState(20)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const previousOverflow = useRef<string | null>(null)
   const desktopContainerRef = useRef<HTMLDivElement | null>(null)
+  const launcherRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -84,7 +93,7 @@ export default function AssistantChat() {
       const resp = await fetch('/api/assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, locale: lang }),
       })
       if (!resp.ok) {
         console.error('Assistant response not ok', resp.status)
@@ -126,15 +135,51 @@ export default function AssistantChat() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen, isMobile])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (isMobile || !avoidFooter) {
+      setDesktopBottom(20)
+      setDesktopRight(20)
+      return
+    }
+
+    const anchor = document.querySelector<HTMLElement>('[data-footer-credit]')
+    if (!anchor) return
+
+    const baseBottom = 20
+    const gap = 12
+
+    function updateOffset() {
+      const rect = anchor.getBoundingClientRect()
+      const launcherHeight = launcherRef.current?.offsetHeight ?? 0
+      const launcherWidth = launcherRef.current?.offsetWidth ?? 0
+      const overlap = Math.max(0, window.innerHeight - rect.top + gap + launcherHeight)
+      setDesktopBottom(Math.max(baseBottom, overlap))
+      const anchorCenterX = rect.left + rect.width / 2
+      const desiredRight = window.innerWidth - anchorCenterX - launcherWidth / 2
+      setDesktopRight(Math.max(20, desiredRight))
+    }
+
+    updateOffset()
+    window.addEventListener('scroll', updateOffset, { passive: true })
+    window.addEventListener('resize', updateOffset)
+    return () => {
+      window.removeEventListener('scroll', updateOffset)
+      window.removeEventListener('resize', updateOffset)
+    }
+  }, [avoidFooter, isMobile])
+
   return (
     <>
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-5 right-5 z-40 hidden rounded-full bg-[--color-brand-red] px-4 py-2 text-sm font-semibold text-black shadow-lg shadow-black/30 transition hover:scale-105 md:inline-flex md:items-center md:justify-center"
+          ref={launcherRef}
+          style={{ bottom: `${desktopBottom}px`, right: `${desktopRight}px` }}
+          className="fixed right-5 z-40 hidden rounded-full bg-[--color-brand-red] px-4 py-2 text-sm font-semibold text-black shadow-lg shadow-black/30 md:inline-flex md:items-center md:justify-center"
         >
-          Ask MacDonald AI
+          {t('cta.ask')}
         </button>
       )}
 
@@ -157,7 +202,7 @@ export default function AssistantChat() {
                     <div className="flex items-center gap-2">
                       <Logo className="flex-shrink-0" forceExpanded textClassName="text-base" showUnderline={false} />
                       <span className="text-xs font-semibold uppercase tracking-wide text-[--color-brand-red] leading-none">
-                        Assistant
+                        {t('chat.assistant')}
                       </span>
                     </div>
                     <button
@@ -168,13 +213,13 @@ export default function AssistantChat() {
                       }}
                       className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-brand-red]/70"
                     >
-                      Close
+                      {t('chat.close')}
                     </button>
                   </header>
                   <div ref={scrollRef} className="max-h-[55vh] overflow-y-auto px-5 py-4 space-y-3 text-sm text-white/90">
                     {messages.length === 0 && (
                       <p className="rounded-lg bg-white/5 px-3 py-2 text-white/70">
-                        How can I help today?
+                        {t('chat.empty')}
                       </p>
                     )}
                     {messages.map((msg, idx) => (
@@ -196,7 +241,7 @@ export default function AssistantChat() {
                     {loading && (
                       <div className="flex justify-start text-white/60">
                         <div className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
-                          <span className="sr-only">Assistant is typing</span>
+                          <span className="sr-only">{t('chat.typing')}</span>
                           <div className="flex items-center gap-1">
                             <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-[--color-brand-red]" />
                             <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.2s] rounded-full bg-[--color-brand-red]" />
@@ -213,7 +258,7 @@ export default function AssistantChat() {
                   </div>
                   <form onSubmit={handleSubmit} className="border-t border-white/10 px-5 py-4">
                     <label className="sr-only" htmlFor="assistant-chat-input">
-                      Message MacDonald AI Assistant
+                      {t('chat.messageLabel')}
                     </label>
                     <textarea
                       id="assistant-chat-input"
@@ -221,7 +266,7 @@ export default function AssistantChat() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleTextareaKeyDown}
-                      placeholder="Ask your question…"
+                      placeholder={t('chat.placeholder')}
                       className="w-full resize-none rounded-lg bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
                     />
                     <div className="mt-3 flex justify-end">
@@ -230,7 +275,7 @@ export default function AssistantChat() {
                         disabled={loading || !input.trim()}
                         className="rounded-lg bg-[--color-brand-red] px-4 py-2 text-sm font-semibold text-black transition disabled:opacity-50"
                       >
-                        {loading ? 'Sending…' : 'Send'}
+                        {loading ? t('chat.sending') : t('chat.send')}
                       </button>
                     </div>
                   </form>
@@ -246,7 +291,7 @@ export default function AssistantChat() {
                 <div className="flex items-center gap-2">
                   <Logo className="flex-shrink-0" forceExpanded textClassName="text-sm" showUnderline={false} />
                   <span className="text-[0.65rem] font-semibold uppercase tracking-wide text-[--color-brand-red] leading-none">
-                    Assistant
+                    {t('chat.assistant')}
                   </span>
                 </div>
                 <button
@@ -255,16 +300,17 @@ export default function AssistantChat() {
                     setIsOpen(false)
                     setError(null)
                   }}
+                  aria-label={t('chat.close')}
                   className="rounded-md p-1 text-white/60 transition hover:bg-white/10 hover:text-white"
                 >
-                  ✕
+                  X
                 </button>
               </header>
 
               <div ref={scrollRef} className="max-h-72 overflow-y-auto px-4 py-3 space-y-3 text-sm text-white/90">
                 {messages.length === 0 && (
                   <p className="rounded-lg bg-white/5 px-3 py-2 text-white/70">
-                    How can I help today?
+                    {t('chat.empty')}
                   </p>
                 )}
                 {messages.map((msg, idx) => (
@@ -286,7 +332,7 @@ export default function AssistantChat() {
                 {loading && (
                   <div className="flex justify-start text-white/60">
                     <div className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
-                      <span className="sr-only">Assistant is typing</span>
+                      <span className="sr-only">{t('chat.typing')}</span>
                       <div className="flex items-center gap-1">
                         <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-[--color-brand-red]" />
                         <span className="inline-block h-1.5 w-1.5 animate-[bounce_1.2s_infinite_0.2s] rounded-full bg-[--color-brand-red]" />
@@ -308,7 +354,7 @@ export default function AssistantChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
-                  placeholder="Ask your question…"
+                  placeholder={t('chat.placeholder')}
                   className="w-full resize-none rounded-lg bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[--color-brand-red]/70"
                 />
                 <div className="mt-2 flex justify-end">
@@ -317,7 +363,7 @@ export default function AssistantChat() {
                     disabled={loading || !input.trim()}
                     className="rounded-lg bg-[--color-brand-red] px-3 py-1.5 text-sm font-semibold text-black transition disabled:opacity-50"
                   >
-                    {loading ? 'Sending…' : 'Send'}
+                    {loading ? t('chat.sending') : t('chat.send')}
                   </button>
                 </div>
               </form>

@@ -1,5 +1,5 @@
-// Lightweight assistant endpoint using OpenAI Responses API.
-// POST /api/assist with JSON: { messages: [{ role: 'user' | 'assistant', content: string }] }
+// Lightweight assistant endpoint using OpenAI Chat Completions API.
+// POST /api/assist with JSON: { messages: [{ role: 'user' | 'assistant', content: string }], locale?: 'en' | 'fr' }
 // Environment variable: OPENAI_API_KEY (stored securely on Vercel; never exposed client-side).
 
 import { readFileSync } from 'fs'
@@ -8,31 +8,23 @@ import { join } from 'path'
 type Req = { method: string; headers: any; body?: any } & Record<string, any>
 type Res = { status: (n: number) => Res; json: (b: any) => void; setHeader: (k: string, v: string) => void; end: () => void }
 
-const catalogPath = join(process.cwd(), 'src/lib/services.md')
+const catalogPathEn = join(process.cwd(), 'src/lib/services.md')
+const catalogPathFr = join(process.cwd(), 'src/lib/services.fr.md')
 const FRIENDLY_ERROR = 'Assistant is unavailable right now. Please try again soon.'
-const servicesCatalog = (() => {
-  try {
-    return readFileSync(catalogPath, 'utf8')
-  } catch (err) {
-    console.error('assist: unable to load services catalog', err)
-    return ''
-  }
-})()
+const servicesCatalog = {
+  en: loadCatalog(catalogPathEn),
+  fr: loadCatalog(catalogPathFr),
+}
 
-const systemPrompt = [
+const systemPromptBase = [
   "You are MacDonald Automation's assistant.",
-  "We are software developers specializing in automation, AI-powered systems, and custom software (integrations, workflows, data pipelines, agents, internal tools).",
-  "We build solutions that drive revenue or efficiency — not just chatbots or UI tweaks.",
-  "Do not downplay our capabilities; respond confidently within our scope.",
+  'We are software developers specializing in automation, AI-powered systems, and custom software (integrations, workflows, data pipelines, agents, internal tools).',
+  'We build solutions that drive revenue or efficiency, not just chatbots or UI tweaks.',
+  'Do not downplay our capabilities; respond confidently within our scope.',
   "Answer only questions related to the company's automation services.",
-  "Politely refuse anything unrelated.",
-  "Format every reply in Markdown so it is easy to read (use headings, bullet lists, and code blocks when helpful).",
-  "Reference the detailed services catalog below when answering:",
+  'Politely refuse anything unrelated.',
+  'Format every reply in Markdown so it is easy to read (use headings, bullet lists, and code blocks when helpful).',
 ].join(' ')
-
-const SYSTEM_PROMPT = servicesCatalog
-  ? `${systemPrompt}\n\n${servicesCatalog}`
-  : ''
 
 export default async function handler(req: Req, res: Res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -49,15 +41,18 @@ export default async function handler(req: Req, res: Res) {
     console.error('assist: missing OPENAI_API_KEY')
     return res.status(500).json({ error: FRIENDLY_ERROR })
   }
-  if (!SYSTEM_PROMPT) {
-    console.error('assist: services catalog unavailable')
-    return res.status(500).json({ error: FRIENDLY_ERROR })
-  }
 
   let body = req.body
   if (Buffer.isBuffer(body)) body = body.toString('utf8')
   if (typeof body === 'string') {
     try { body = JSON.parse(body) } catch { body = {} }
+  }
+
+  const locale = body?.locale === 'fr' ? 'fr' : 'en'
+  const catalog = servicesCatalog[locale] || servicesCatalog.en
+  if (!catalog) {
+    console.error('assist: services catalog unavailable')
+    return res.status(500).json({ error: FRIENDLY_ERROR })
   }
 
   const rawMessages: Array<{ role: string; content: string }> = Array.isArray(body?.messages) ? body.messages : []
@@ -73,10 +68,16 @@ export default async function handler(req: Req, res: Res) {
   if (!normalizedMessages.length) return res.status(400).json({ error: 'Please include a valid message.' })
 
   try {
+    const languageInstruction =
+      locale === 'fr'
+        ? 'Respond in Canadian French (fr-CA). Use Quebec terminology and a warm, professional tone.'
+        : 'Respond in English.'
+    const systemPrompt = `${systemPromptBase} ${languageInstruction}\n\nReference the detailed services catalog below when answering:`
+
     const payload = {
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: `${systemPrompt}\n\n${catalog}` },
         ...normalizedMessages.map((msg) => ({ role: msg.role, content: msg.content })),
       ],
       temperature: 0.4,
@@ -123,4 +124,13 @@ function extractChatText(data: any) {
     console.error('assist extractChatText error', err)
   }
   return null
+}
+
+function loadCatalog(path: string) {
+  try {
+    return readFileSync(path, 'utf8')
+  } catch (err) {
+    console.error('assist: unable to load services catalog', err)
+    return ''
+  }
 }

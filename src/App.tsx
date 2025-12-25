@@ -9,9 +9,11 @@ import Services from './pages/Services'
 import Quote from './pages/Quote'
 import AssistantChat from './components/AssistantChat'
 import { CALENDLY_URL } from './lib/calendly'
+import { useLanguage } from './lib/i18n'
 
 export default function App() {
   const location = useLocation()
+  const { t } = useLanguage()
   const hideCTA = ['/quote'].includes(location.pathname)
   const [isNearFooter, setIsNearFooter] = useState(false)
   const scrollThreshold = 280
@@ -59,12 +61,12 @@ export default function App() {
               rel="noreferrer"
               className="rounded-full bg-[--color-brand-red] px-5 py-2 font-semibold text-black transition hover:opacity-90"
             >
-              Book a Call
+              {t('cta.bookCall')}
             </a>
           </div>
         </div>
       )}
-      <AssistantChat />
+      <AssistantChat avoidFooter />
     </div>
   )
 }

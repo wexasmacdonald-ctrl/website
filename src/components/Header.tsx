@@ -2,16 +2,20 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useEffect, useState, type MouseEvent } from 'react'
 import Logo from './Logo'
 import { CALENDLY_URL } from '../lib/calendly'
+import { useLanguage } from '../lib/i18n'
 
 const nav = [
-  { to: '/', label: 'Home' },
-  { to: '/about', label: 'About' },
-  { to: '/services', label: 'Services' },
+  { to: '/', labelKey: 'nav.home' },
+  { to: '/about', labelKey: 'nav.about' },
+  { to: '/services', labelKey: 'nav.services' },
 ]
 
 export default function Header() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
+  const { lang, t, toggleLang } = useLanguage()
+  const toggleLabel = lang === 'en' ? 'FR' : 'EN'
+  const toggleAria = lang === 'en' ? t('language.toggleToFrench') : t('language.toggleToEnglish')
 
   useEffect(() => {
     // Close menu on route change
@@ -40,7 +44,7 @@ export default function Header() {
                 `text-sm transition-colors ${isActive ? 'text-white' : 'text-white/70 hover:text-white'}`
               }
             >
-              {n.label}
+              {t(n.labelKey)}
             </NavLink>
           ))}
           <a
@@ -49,27 +53,35 @@ export default function Header() {
             rel="noreferrer"
             className="text-sm px-3 py-2 rounded-md border border-[--color-brand-red]/40 text-white bg-[--color-brand-red]/10 hover:bg-[--color-brand-red]/20"
           >
-            Book a Call
+            {t('header.bookCall')}
           </a>
           <Link
             to="/quote"
             className="text-sm px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold hover:opacity-90"
           >
-            Get a Quote
+            {t('header.getQuote')}
           </Link>
+          <button
+            type="button"
+            onClick={toggleLang}
+            aria-label={toggleAria}
+            className="text-sm font-semibold text-[--color-brand-red] underline underline-offset-4"
+          >
+            {toggleLabel}
+          </button>
         </nav>
         <div className="md:hidden ml-auto flex items-center gap-2">
           <a
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            aria-label="Book a Call"
+            aria-label={t('header.bookCall')}
             className="px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold"
           >
-            Book
+            {t('header.book')}
           </a>
           <button
-            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-label={open ? t('header.closeMenu') : t('header.openMenu')}
             onClick={() => setOpen((v) => !v)}
             className="px-3 py-2 rounded-md border border-white/10 text-white/80 hover:text-white"
           >
@@ -82,10 +94,10 @@ export default function Header() {
         {open && (
           <div className="absolute left-0 right-0 top-full bg-black/95 border-b border-white/10 md:hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <span className="text-sm font-semibold text-white">Menu</span>
+              <span className="text-sm font-semibold text-white">{t('header.menu')}</span>
               <button
                 type="button"
-                aria-label="Close menu"
+                aria-label={t('header.closeMenu')}
                 onClick={() => setOpen(false)}
                 className="rounded-md p-2 text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--color-brand-red]/70"
               >
@@ -104,7 +116,7 @@ export default function Header() {
                     `py-2 text-base ${isActive ? 'text-white' : 'text-white/80 hover:text-white'}`
                   }
                 >
-                  {n.label}
+                  {t(n.labelKey)}
                 </NavLink>
               ))}
               <Link
@@ -112,7 +124,7 @@ export default function Header() {
                 onClick={(e) => handleMobileNavClick(e, '/quote')}
                 className="mt-2 text-center px-3 py-2 rounded-md bg-[--color-brand-red] text-black font-semibold"
               >
-                Get a Quote
+                {t('header.getQuote')}
               </Link>
               <a
                 href={CALENDLY_URL}
@@ -121,8 +133,19 @@ export default function Header() {
                 onClick={() => setOpen(false)}
                 className="text-center px-3 py-2 rounded-md border border-white/10 text-white/90 hover:text-white"
               >
-                Book a Call
+                {t('header.bookCall')}
               </a>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleLang()
+                  setOpen(false)
+                }}
+                aria-label={toggleAria}
+                className="text-center px-3 py-2 font-semibold text-[--color-brand-red] underline underline-offset-4"
+              >
+                {toggleLabel}
+              </button>
             </nav>
           </div>
         )}

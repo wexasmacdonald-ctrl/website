@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion'
+import { useLanguage } from '../lib/i18n'
 
 export default function Hero() {
+  const { t } = useLanguage()
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -17,7 +20,7 @@ export default function Hero() {
           transition={{ duration: 0.5 }}
           className="text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight"
         >
-          We turn your computer into a 20-person workforce.
+          {t('hero.title')}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -25,7 +28,7 @@ export default function Hero() {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="mt-5 text-lg md:text-xl text-white/80"
         >
-          Building powerful automation that does the boring work for you—data entry, client follow-ups, reports, websites, and more—while you focus on the stuff that actually makes money.
+          {t('hero.subtitle')}
         </motion.p>
       </div>
     </section>

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useLanguage } from '../lib/i18n'
 // Email + logging is handled server-side at /api/lead
 
 export default function Contact() {
-  const FRIENDLY_ERROR = 'We could not send your message right now. Please try again shortly.'
+  const { t } = useLanguage()
+  const FRIENDLY_ERROR = t('quote.error')
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -39,36 +41,36 @@ export default function Contact() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-16">
-      <h1 className="text-3xl font-bold">Get a Quote</h1>
-      <p className="mt-3 text-white/80">Tell me what you want to automate. I’ll reply fast.</p>
+      <h1 className="text-3xl font-bold">{t('quote.title')}</h1>
+      <p className="mt-3 text-white/80">{t('quote.intro')}</p>
 
       <form onSubmit={onSubmit} className="mt-8 grid gap-4">
         <label className="grid gap-2">
-          <span className="text-sm text-white/70">Name</span>
+          <span className="text-sm text-white/70">{t('quote.labels.name')}</span>
           <input
             name="name"
             required
-            placeholder="Your name"
+            placeholder={t('quote.placeholders.name')}
             className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
           />
         </label>
         <label className="grid gap-2">
-          <span className="text-sm text-white/70">Email</span>
+          <span className="text-sm text-white/70">{t('quote.labels.email')}</span>
           <input
             name="email"
             type="email"
             required
-            placeholder="you@example.com"
+            placeholder={t('quote.placeholders.email')}
             className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
           />
         </label>
         <label className="grid gap-2">
-          <span className="text-sm text-white/70">Message</span>
+          <span className="text-sm text-white/70">{t('quote.labels.message')}</span>
           <textarea
             name="message"
             required
             rows={5}
-            placeholder="What do you want to automate?"
+            placeholder={t('quote.placeholders.message')}
             className="rounded-md bg-white/[0.06] border border-white/10 px-3 py-2 outline-none focus:border-[--color-brand-red]/60"
           />
         </label>
@@ -78,17 +80,18 @@ export default function Contact() {
             disabled={status === 'sending'}
             className="px-5 py-2.5 rounded-md bg-[--color-brand-red] text-black font-semibold disabled:opacity-60"
           >
-            {status === 'sending' ? 'Sending...' : 'Submit'}
+            {status === 'sending' ? t('quote.sending') : t('quote.submit')}
           </button>
         </div>
         {status === 'success' && (
-          <p className="text-sm text-emerald-400">Thanks — we received your request. We’ll reply shortly.</p>
+          <p className="text-sm text-emerald-400">{t('quote.success')}</p>
         )}
         {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
       </form>
 
       <div className="mt-8 text-sm text-white/60">
-        Prefer email? <a className="underline" href="mailto:campbell@macdonaldautomation.com">campbell@macdonaldautomation.com</a>
+        {t('quote.preferEmail')}{' '}
+        <a className="underline" href="mailto:campbell@macdonaldautomation.com">campbell@macdonaldautomation.com</a>
       </div>
     </main>
   )
