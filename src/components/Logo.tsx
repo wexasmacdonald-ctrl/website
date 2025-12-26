@@ -201,7 +201,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
     <div className={className}>
       <div className={`relative block w-full select-none ${forceExpanded ? '' : 'group'}`} aria-hidden="true" {...handlers}>
         <span className={baseTextClasses}>
-          <span className="text-white">{'<'}</span>
+          <span className="inline-block text-white -translate-y-[1.5px]">{'<'}</span>
           {LETTERS.map((letter, index) => {
             const isVisible = forceExpanded || visibleLetters[index]
             const isSettled = forceExpanded || letterSettled[index]
@@ -230,7 +230,7 @@ export default function Logo({ className, forceExpanded = false, textClassName, 
               </span>
             )
           })}
-          <span className="text-white ml-[0.08em]">{'>'}</span>
+          <span className="inline-block text-white ml-[0.08em] -translate-x-[3px] -translate-y-[1.5px]">{'>'}</span>
         </span>
         {showUnderline && (
           <span className={accentClasses} aria-hidden="true">

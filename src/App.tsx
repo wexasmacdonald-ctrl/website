@@ -16,6 +16,7 @@ export default function App() {
   const { t } = useLanguage()
   const hideCTA = ['/quote'].includes(location.pathname)
   const [isNearFooter, setIsNearFooter] = useState(false)
+  const [canScroll, setCanScroll] = useState(false)
   const scrollThreshold = 280
 
   useEffect(() => {
@@ -25,7 +26,10 @@ export default function App() {
       const scrollY = window.scrollY || window.pageYOffset
       const innerHeight = window.innerHeight || doc.clientHeight
       const docHeight = doc.scrollHeight
-      const isClose = innerHeight + scrollY >= docHeight - scrollThreshold
+      const canScrollNow = docHeight - innerHeight > 1
+      const hasScrolled = scrollY > 0
+      const isClose = canScrollNow && hasScrolled && innerHeight + scrollY >= docHeight - scrollThreshold
+      setCanScroll(canScrollNow)
       setIsNearFooter(isClose)
     }
 
@@ -51,7 +55,7 @@ export default function App() {
         </Routes>
       </div>
       <Footer />
-      {!hideCTA && <MobileCTA hideWhenNearBottom={isNearFooter} />}
+      {!hideCTA && <MobileCTA hideWhenNearBottom={isNearFooter && canScroll} />}
       {!hideCTA && isNearFooter && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] transition-opacity duration-200 md:hidden">
           <div className="pointer-events-auto flex w-full max-w-lg flex-wrap items-center justify-center gap-3 text-sm text-white">
