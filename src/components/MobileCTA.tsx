@@ -15,7 +15,7 @@ export default function MobileCTA({ hideWhenNearBottom }: Props) {
       <button
         type="button"
         onClick={() => window.dispatchEvent(new Event('open-assistant-chat'))}
-        className="pointer-events-auto rounded-full bg-[--color-brand-red] px-6 py-3 text-xs font-semibold uppercase tracking-wide text-black shadow-lg shadow-black/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[--color-brand-red]/80 hover:scale-105 active:scale-95 sm:text-sm"
+        className="pointer-events-auto rounded-full bg-[--color-brand-red] px-6 py-3 text-xs font-extrabold uppercase tracking-wide text-black shadow-lg shadow-black/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[--color-brand-red]/80 hover:scale-105 active:scale-95 sm:text-sm"
       >
         {t('cta.aiChatbot')}
       </button>
