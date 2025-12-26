@@ -41,10 +41,10 @@ const translations: Record<Lang, TranslationValue> = {
     hero: {
       title: 'We turn your computer into a 20-person workforce.',
       subtitle:
-        'Building powerful automation that does the boring work for you: data entry, client follow-ups, reports, websites, and more - while you focus on the stuff that actually makes money.',
+        'We build powerful automation that does the boring work for you: data entry, client follow-ups, reports, websites, and more - while you focus on the stuff that actually makes money.',
     },
     home: {
-      sectionTitle: 'What I Build',
+      sectionTitle: 'What We Build',
       sectionBody:
         'Custom software - from AI agents and automation systems to full websites, web apps, and desktop apps. Every project is designed to save time, scale your business, and create an unfair advantage.',
     },
@@ -53,7 +53,7 @@ const translations: Record<Lang, TranslationValue> = {
       photoAlt: 'Joseph MacDonald',
       photoFallback: 'Put your photo at public/me.jpeg (or me.jpg)',
       p1:
-        "I'm Joseph MacDonald, a developer, builder, and entrepreneur from Ottawa. I run MacDonald AI, where we use AI and/or software to create systems that make (or save) real money: automation for ops, custom software, integrations, data pipelines, and agents where they actually help. We don't just add a chatbot to your site-we build the underlying workflows and tools that move the business.",
+        "We're a developer-led team from Ottawa building MacDonald AI, where we use AI and/or software to create systems that make (or save) real money: automation for ops, custom software, integrations, data pipelines, and agents where they actually help. We don't just add a chatbot to your site-we build the underlying workflows and tools that move the business.",
       p2:
         'Big company or small team, the goal is the same: design and ship reliable automation that saves time, boosts performance, and pays for itself fast.',
     },
@@ -145,7 +145,7 @@ const translations: Record<Lang, TranslationValue> = {
       photoAlt: 'Joseph MacDonald',
       photoFallback: 'Mettez votre photo dans public/me.jpeg (ou me.jpg)',
       p1:
-        "Je m'appelle Joseph MacDonald, développeur, expert d'automisation et entrepreneur basé à Ottawa. Je dirige MacDonald AI, où nous utilisons l'IA et/ou le logiciel pour créer des systèmes qui font (ou économisent) de l'argent : automatisation des opérations, logiciels sur mesure, intégrations, pipelines de données et agents là où ils aident vraiment. On ne fait pas juste ajouter un chatbot à votre site - on construit les workflows et les outils qui font avancer l'entreprise.",
+        "Je m'appelle Joseph MacDonald, développeur, expert d'automatisation et entrepreneur basé à Ottawa. Je dirige MacDonald AI, où nous utilisons l'IA et/ou le logiciel pour créer des systèmes qui font (ou économisent) de l'argent : automatisation des opérations, logiciels sur mesure, intégrations, pipelines de données et agents là où ils aident vraiment. On ne fait pas juste ajouter un chatbot à votre site - on construit les workflows et les outils qui font avancer l'entreprise.",
       p2:
         "Grande entreprise ou petite équipe, l'objectif est le même : concevoir et livrer une automatisation fiable qui fait gagner du temps, booste la performance et se rentabilise rapidement.",
     },
