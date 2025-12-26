@@ -33,7 +33,10 @@ export default function Header() {
     <header className="sticky top-0 z-50 bg-black/70 backdrop-blur border-b border-white/10">
       <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3 md:gap-6 relative">
         <Link to="/" className="group flex-1 min-w-0 md:flex-none">
-          <Logo className="block w-full max-w-none [&>div>span:last-child]:group-hover:w-4/5" />
+          <Logo
+            className="block w-full max-w-none [&>div>span:last-child]:group-hover:w-4/5"
+            textClassName="text-[clamp(1.25rem,5.3vw,1.9rem)] sm:text-[clamp(1.25rem,4vw,2rem)] md:text-[2rem] lg:text-[2.45rem]"
+          />
         </Link>
         <nav className="ml-auto hidden md:flex items-center gap-6">
           {nav.map((n) => (
@@ -65,7 +68,7 @@ export default function Header() {
             type="button"
             onClick={toggleLang}
             aria-label={toggleAria}
-            className="text-sm font-semibold text-[--color-brand-red] underline underline-offset-4"
+            className="text-sm md:text-base lg:text-lg font-semibold text-[--color-brand-red] underline underline-offset-4"
           >
             {toggleLabel}
           </button>
