@@ -42,6 +42,15 @@ export default function App() {
     }
   }, [location.pathname])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const gtag = (window as { gtag?: (...args: any[]) => void }).gtag
+    if (typeof gtag === 'function') {
+      const pagePath = `${location.pathname}${location.search}${location.hash}`
+      gtag('event', 'page_view', { page_path: pagePath })
+    }
+  }, [location.pathname, location.search, location.hash])
+
   return (
     <div className="grain min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
       <Header />
