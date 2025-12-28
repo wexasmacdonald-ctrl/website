@@ -30,8 +30,8 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-black/70 backdrop-blur border-b border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3 md:gap-6 relative">
+    <header className="fixed inset-x-0 top-0 z-50 bg-black/90 backdrop-blur border-b border-white/10 before:content-[''] before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-black/90">
+      <div className="w-full px-4 py-4 flex items-center gap-3 md:gap-6 relative">
         <Link to="/" className="group flex-1 min-w-0 md:flex-none">
           <Logo
             className="block w-full max-w-none [&>div>span:last-child]:group-hover:w-4/5"

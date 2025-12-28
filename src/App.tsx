@@ -1,5 +1,5 @@
-import { Route, Routes, useLocation, Link, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import MobileCTA from './components/MobileCTA'
@@ -13,34 +13,49 @@ import { useLanguage } from './lib/i18n'
 
 export default function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { t } = useLanguage()
   const hideCTA = ['/quote'].includes(location.pathname)
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const panelRefs = useRef<Array<HTMLDivElement | null>>([])
+  const autoScrollingRef = useRef(false)
   const [isNearFooter, setIsNearFooter] = useState(false)
   const [canScroll, setCanScroll] = useState(false)
   const scrollThreshold = 280
+  const pages = useMemo(
+    () => [
+      { path: '/', element: <Home /> },
+      { path: '/about', element: <About /> },
+      { path: '/services', element: <Services /> },
+      { path: '/quote', element: <Quote /> },
+    ],
+    []
+  )
+  const activeIndex = useMemo(() => pages.findIndex((page) => page.path === location.pathname), [pages, location.pathname])
 
   useEffect(() => {
+    const panel = panelRefs.current[activeIndex]
+    if (!panel) return
+
     function updateProximity() {
-      if (typeof window === 'undefined') return
-      const doc = document.documentElement
-      const scrollY = window.scrollY || window.pageYOffset
-      const innerHeight = window.innerHeight || doc.clientHeight
-      const docHeight = doc.scrollHeight
+      const scrollTop = panel.scrollTop
+      const innerHeight = panel.clientHeight
+      const docHeight = panel.scrollHeight
       const canScrollNow = docHeight - innerHeight > 1
-      const hasScrolled = scrollY > 0
-      const isClose = canScrollNow && hasScrolled && innerHeight + scrollY >= docHeight - scrollThreshold
+      const hasScrolled = scrollTop > 0
+      const isClose = canScrollNow && hasScrolled && innerHeight + scrollTop >= docHeight - scrollThreshold
       setCanScroll(canScrollNow)
       setIsNearFooter(isClose)
     }
 
     updateProximity()
-    window.addEventListener('scroll', updateProximity, { passive: true })
+    panel.addEventListener('scroll', updateProximity, { passive: true })
     window.addEventListener('resize', updateProximity)
     return () => {
-      window.removeEventListener('scroll', updateProximity)
+      panel.removeEventListener('scroll', updateProximity)
       window.removeEventListener('resize', updateProximity)
     }
-  }, [location.pathname])
+  }, [activeIndex])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -51,19 +66,64 @@ export default function App() {
     }
   }, [location.pathname, location.search, location.hash])
 
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || activeIndex < 0) return
+    const targetLeft = track.clientWidth * activeIndex
+    if (Math.abs(track.scrollLeft - targetLeft) < 2) return
+    autoScrollingRef.current = true
+    track.scrollTo({ left: targetLeft, behavior: 'smooth' })
+    const timer = window.setTimeout(() => {
+      autoScrollingRef.current = false
+    }, 500)
+    return () => window.clearTimeout(timer)
+  }, [activeIndex])
+
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    let raf = 0
+
+    function handleScroll() {
+      if (autoScrollingRef.current) return
+      if (raf) window.cancelAnimationFrame(raf)
+      raf = window.requestAnimationFrame(() => {
+        const width = track.clientWidth || 1
+        const nextIndex = Math.round(track.scrollLeft / width)
+        const nextPage = pages[nextIndex]
+        if (nextPage && nextPage.path !== location.pathname) {
+          navigate(nextPage.path, { replace: true })
+        }
+      })
+    }
+
+    track.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      track.removeEventListener('scroll', handleScroll)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
+  }, [navigate, pages, location.pathname])
+
   return (
-    <div className="grain min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
+    <div className="grain text-soft-outline min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
       <Header />
-      <div className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/contact" element={<Navigate to="/quote" replace />} />
-          <Route path="/quote" element={<Quote />} />
-        </Routes>
+      <div ref={trackRef} className="page-track flex-1">
+        {pages.map((page, index) => (
+          <section
+            key={page.path}
+            ref={(el) => {
+              panelRefs.current[index] = el
+            }}
+            className="page-panel"
+            data-path={page.path}
+          >
+            <div className="page-panel-inner">
+              {page.element}
+              <Footer />
+            </div>
+          </section>
+        ))}
       </div>
-      <Footer />
       {!hideCTA && <MobileCTA hideWhenNearBottom={isNearFooter && canScroll} />}
       {!hideCTA && isNearFooter && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 pb-[env(safe-area-inset-bottom)] transition-opacity duration-200 md:hidden">

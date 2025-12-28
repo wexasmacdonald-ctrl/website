@@ -13,7 +13,7 @@ export default function Hero() {
         />
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 pt-20 pb-20 text-center">
+      <div className="w-full px-4 pt-20 pb-20 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

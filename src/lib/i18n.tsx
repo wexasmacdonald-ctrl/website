@@ -53,7 +53,7 @@ const translations: Record<Lang, TranslationValue> = {
       photoAlt: 'Joseph MacDonald',
       photoFallback: 'Put your photo at public/me.jpeg (or me.jpg)',
       p1:
-        "We're a developer-led team from Ottawa building MacDonald AI, where we use AI and/or software to create systems that make (or save) real money: automation for ops, custom software, integrations, data pipelines, and agents where they actually help. We don't just add a chatbot to your site-we build the underlying workflows and tools that move the business.",
+        "I'm Joseph MacDonald, a developer, builder, and entrepreneur from Ottawa. I run MacDonald AI, where we use AI and/or software to create systems that make (or save) real money: automation for ops, custom software, integrations, data pipelines, and agents where they actually help. We don't just add a chatbot to your site-we build the underlying workflows and tools that move the business.",
       p2:
         'Big company or small team, the goal is the same: design and ship reliable automation that saves time, boosts performance, and pays for itself fast.',
     },

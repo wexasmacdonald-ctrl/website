@@ -40,8 +40,8 @@ export default function Contact() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-16">
-      <h1 className="text-3xl font-bold">{t('quote.title')}</h1>
+    <main className="page-body w-full px-4 py-16">
+      <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">{t('quote.title')}</h1>
       <p className="mt-3 text-white/80">{t('quote.intro')}</p>
 
       <form onSubmit={onSubmit} className="mt-8 grid gap-4">

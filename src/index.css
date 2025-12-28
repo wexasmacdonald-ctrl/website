@@ -8,6 +8,21 @@ html, body, #root {
 }
 body {
   @apply bg-black text-white antialiased;
+  background-image: url('/texture.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Improve mobile scroll behavior and avoid bounce-back */
@@ -58,4 +73,48 @@ html, body {
 }
 .assistant-markdown pre {
   @apply overflow-x-auto rounded-md bg-white/10 p-3 text-[0.85em];
+}
+
+.text-soft-outline {
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.9);
+}
+
+.page-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-panel {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  height: 100dvh;
+  overflow-y: auto;
+}
+
+.page-panel-inner {
+  min-height: 100%;
+  padding-top: 5rem;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 768px) {
+  .page-panel-inner {
+    padding-top: 6rem;
+  }
+}
+
+.page-body p,
+.page-body li,
+.page-body blockquote,
+.page-body figcaption,
+.page-body dd,
+.page-body dt,
+.page-body label,
+.page-body textarea,
+.page-body input {
+  @apply text-lg md:text-xl;
 }

@@ -7,13 +7,15 @@ export default function Services() {
   const services = (get('services.items') as ServiceItem[]) || []
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-16">
-      <h1 className="text-3xl font-bold">{t('services.title')}</h1>
-      <p className="mt-3 text-white/80">{t('services.intro')}</p>
+    <main className="page-body w-full px-4 py-16">
+      <div className="mx-auto md:max-w-4xl">
+        <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">{t('services.title')}</h1>
+        <p className="mt-3 text-white/80">{t('services.intro')}</p>
+      </div>
 
-      <ul className="mt-8 divide-y divide-white/10">
+      <ul className="mt-8 space-y-4 mx-auto md:max-w-4xl">
         {services.map((service) => (
-          <li key={service.title} className="py-4 flex items-start gap-3">
+          <li key={service.title} className="flex items-start gap-3">
             <span className="mt-2 h-2 w-2 rounded-full bg-[--color-brand-red] shrink-0" />
             <div>
               <h3 className="font-semibold leading-tight">{service.title}</h3>
