@@ -82,7 +82,43 @@ export default function App() {
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
+    let accumulatedX = 0
+    let resetTimer: number | null = null
+    const THRESHOLD = 180
+    let cooldown = false
     let raf = 0
+
+    function handleWheel(event: WheelEvent) {
+      const deltaX = event.deltaX
+      const deltaY = event.deltaY
+      if (Math.abs(deltaX) <= Math.abs(deltaY)) return
+      event.preventDefault()
+      if (cooldown || autoScrollingRef.current) return
+
+      accumulatedX += deltaX
+      if (resetTimer) window.clearTimeout(resetTimer)
+      resetTimer = window.setTimeout(() => {
+        accumulatedX = 0
+      }, 140)
+
+      if (Math.abs(accumulatedX) < THRESHOLD) return
+      event.preventDefault()
+      accumulatedX = 0
+
+      const nextIndex = deltaX > 0 ? activeIndex + 1 : activeIndex - 1
+      const nextPage = pages[nextIndex]
+      if (!nextPage) return
+
+      autoScrollingRef.current = true
+      cooldown = true
+      navigate(nextPage.path)
+      const targetLeft = track.clientWidth * nextIndex
+      track.scrollTo({ left: targetLeft, behavior: 'smooth' })
+      window.setTimeout(() => {
+        autoScrollingRef.current = false
+        cooldown = false
+      }, 500)
+    }
 
     function handleScroll() {
       if (autoScrollingRef.current) return
@@ -97,12 +133,15 @@ export default function App() {
       })
     }
 
+    track.addEventListener('wheel', handleWheel, { passive: false })
     track.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
+      track.removeEventListener('wheel', handleWheel)
       track.removeEventListener('scroll', handleScroll)
       if (raf) window.cancelAnimationFrame(raf)
+      if (resetTimer) window.clearTimeout(resetTimer)
     }
-  }, [navigate, pages, location.pathname])
+  }, [activeIndex, navigate, pages, location.pathname])
 
   return (
     <div className="grain text-soft-outline min-h-dvh flex flex-col pb-[calc(env(safe-area-inset-bottom)+84px)] md:pb-0">
@@ -139,7 +178,7 @@ export default function App() {
           </div>
         </div>
       )}
-      <AssistantChat avoidFooter />
+      <AssistantChat avoidFooter scrollContainer={panelRefs.current[activeIndex] ?? null} />
     </div>
   )
 }

@@ -8,9 +8,10 @@ type Message = { role: 'user' | 'assistant'; content: string }
 
 type AssistantChatProps = {
   avoidFooter?: boolean
+  scrollContainer?: HTMLElement | null
 }
 
-export default function AssistantChat({ avoidFooter = false }: AssistantChatProps) {
+export default function AssistantChat({ avoidFooter = false, scrollContainer = null }: AssistantChatProps) {
   const { t, lang } = useLanguage()
   const FRIENDLY_ERROR = t('chat.error')
   const [isOpen, setIsOpen] = useState(false)
@@ -143,7 +144,8 @@ export default function AssistantChat({ avoidFooter = false }: AssistantChatProp
       return
     }
 
-    const anchor = document.querySelector<HTMLElement>('[data-footer-credit]')
+    const scope = scrollContainer ?? document
+    const anchor = scope.querySelector<HTMLElement>('[data-footer-credit]')
     if (!anchor) return
 
     const baseBottom = 20
@@ -161,13 +163,14 @@ export default function AssistantChat({ avoidFooter = false }: AssistantChatProp
     }
 
     updateOffset()
-    window.addEventListener('scroll', updateOffset, { passive: true })
+    const scrollTarget = scrollContainer ?? window
+    scrollTarget.addEventListener('scroll', updateOffset, { passive: true })
     window.addEventListener('resize', updateOffset)
     return () => {
-      window.removeEventListener('scroll', updateOffset)
+      scrollTarget.removeEventListener('scroll', updateOffset)
       window.removeEventListener('resize', updateOffset)
     }
-  }, [avoidFooter, isMobile])
+  }, [avoidFooter, isMobile, scrollContainer])
 
   return (
     <>
