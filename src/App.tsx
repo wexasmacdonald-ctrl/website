@@ -17,7 +17,7 @@ export default function App() {
   const { t } = useLanguage()
   const hideCTA = ['/quote'].includes(location.pathname)
   const trackRef = useRef<HTMLDivElement | null>(null)
-  const panelRefs = useRef<Array<HTMLDivElement | null>>([])
+  const panelRefs = useRef<Array<HTMLElement | null>>([])
   const autoScrollingRef = useRef(false)
   const [isNearFooter, setIsNearFooter] = useState(false)
   const [canScroll, setCanScroll] = useState(false)
@@ -36,11 +36,12 @@ export default function App() {
   useEffect(() => {
     const panel = panelRefs.current[activeIndex]
     if (!panel) return
+    const panelEl = panel
 
     function updateProximity() {
-      const scrollTop = panel.scrollTop
-      const innerHeight = panel.clientHeight
-      const docHeight = panel.scrollHeight
+      const scrollTop = panelEl.scrollTop
+      const innerHeight = panelEl.clientHeight
+      const docHeight = panelEl.scrollHeight
       const canScrollNow = docHeight - innerHeight > 1
       const hasScrolled = scrollTop > 0
       const isClose = canScrollNow && hasScrolled && innerHeight + scrollTop >= docHeight - scrollThreshold
@@ -49,10 +50,10 @@ export default function App() {
     }
 
     updateProximity()
-    panel.addEventListener('scroll', updateProximity, { passive: true })
+    panelEl.addEventListener('scroll', updateProximity, { passive: true })
     window.addEventListener('resize', updateProximity)
     return () => {
-      panel.removeEventListener('scroll', updateProximity)
+      panelEl.removeEventListener('scroll', updateProximity)
       window.removeEventListener('resize', updateProximity)
     }
   }, [activeIndex])
@@ -69,10 +70,11 @@ export default function App() {
   useEffect(() => {
     const track = trackRef.current
     if (!track || activeIndex < 0) return
-    const targetLeft = track.clientWidth * activeIndex
-    if (Math.abs(track.scrollLeft - targetLeft) < 2) return
+    const trackEl = track
+    const targetLeft = trackEl.clientWidth * activeIndex
+    if (Math.abs(trackEl.scrollLeft - targetLeft) < 2) return
     autoScrollingRef.current = true
-    track.scrollTo({ left: targetLeft, behavior: 'smooth' })
+    trackEl.scrollTo({ left: targetLeft, behavior: 'smooth' })
     const timer = window.setTimeout(() => {
       autoScrollingRef.current = false
     }, 500)
@@ -82,6 +84,7 @@ export default function App() {
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
+    const trackEl = track
     let accumulatedX = 0
     let resetTimer: number | null = null
     const THRESHOLD = 180
@@ -112,8 +115,8 @@ export default function App() {
       autoScrollingRef.current = true
       cooldown = true
       navigate(nextPage.path)
-      const targetLeft = track.clientWidth * nextIndex
-      track.scrollTo({ left: targetLeft, behavior: 'smooth' })
+      const targetLeft = trackEl.clientWidth * nextIndex
+      trackEl.scrollTo({ left: targetLeft, behavior: 'smooth' })
       window.setTimeout(() => {
         autoScrollingRef.current = false
         cooldown = false
@@ -124,8 +127,8 @@ export default function App() {
       if (autoScrollingRef.current) return
       if (raf) window.cancelAnimationFrame(raf)
       raf = window.requestAnimationFrame(() => {
-        const width = track.clientWidth || 1
-        const nextIndex = Math.round(track.scrollLeft / width)
+        const width = trackEl.clientWidth || 1
+        const nextIndex = Math.round(trackEl.scrollLeft / width)
         const nextPage = pages[nextIndex]
         if (nextPage && nextPage.path !== location.pathname) {
           navigate(nextPage.path, { replace: true })
@@ -133,11 +136,11 @@ export default function App() {
       })
     }
 
-    track.addEventListener('wheel', handleWheel, { passive: false })
-    track.addEventListener('scroll', handleScroll, { passive: true })
+    trackEl.addEventListener('wheel', handleWheel, { passive: false })
+    trackEl.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
-      track.removeEventListener('wheel', handleWheel)
-      track.removeEventListener('scroll', handleScroll)
+      trackEl.removeEventListener('wheel', handleWheel)
+      trackEl.removeEventListener('scroll', handleScroll)
       if (raf) window.cancelAnimationFrame(raf)
       if (resetTimer) window.clearTimeout(resetTimer)
     }

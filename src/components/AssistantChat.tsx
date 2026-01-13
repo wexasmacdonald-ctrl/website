@@ -147,12 +147,13 @@ export default function AssistantChat({ avoidFooter = false, scrollContainer = n
     const scope = scrollContainer ?? document
     const anchor = scope.querySelector<HTMLElement>('[data-footer-credit]')
     if (!anchor) return
+    const anchorEl = anchor
 
     const baseBottom = 20
     const gap = 12
 
     function updateOffset() {
-      const rect = anchor.getBoundingClientRect()
+      const rect = anchorEl.getBoundingClientRect()
       const launcherHeight = launcherRef.current?.offsetHeight ?? 0
       const launcherWidth = launcherRef.current?.offsetWidth ?? 0
       const overlap = Math.max(0, window.innerHeight - rect.top + gap + launcherHeight)

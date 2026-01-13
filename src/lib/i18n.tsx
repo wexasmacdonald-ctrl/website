@@ -3,7 +3,11 @@ import type { ReactNode } from 'react'
 
 type Lang = 'en' | 'fr'
 
-type TranslationValue = string | Record<string, TranslationValue> | Array<any>
+type TranslationValue = string | TranslationMap | TranslationValue[]
+
+interface TranslationMap {
+  [key: string]: TranslationValue
+}
 
 type LanguageContextValue = {
   lang: Lang
